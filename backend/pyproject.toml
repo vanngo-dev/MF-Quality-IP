@@ -1,3 +1,27 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "manufacturing-quality-intelligence-backend"
+version = "0.2.0"
+description = "FastAPI backend for the Manufacturing Quality Intelligence Platform."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "sqlalchemy==2.0.36",
+    "alembic==1.14.0",
+    "psycopg2-binary==2.9.10",
+    "pydantic-settings==2.7.0",
+    "python-dotenv==1.0.1",
+    "httpx==0.28.1",
+    "pytest==8.3.4",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

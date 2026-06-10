@@ -1,0 +1,154 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from sqlalchemy import DateTime, Float, ForeignKey, JSON, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class Plant(Base):
+    __tablename__ = "plants"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    location: Mapped[str] = mapped_column(String(160))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    lines: Mapped[list[ProductionLine]] = relationship(back_populates="plant", cascade="all, delete-orphan")
+
+
+class ProductionLine(Base):
+    __tablename__ = "production_lines"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    plant_id: Mapped[int] = mapped_column(ForeignKey("plants.id"), index=True)
+    code: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    product_family: Mapped[str] = mapped_column(String(80))
+
+    plant: Mapped[Plant] = relationship(back_populates="lines")
+    stations: Mapped[list[Station]] = relationship(back_populates="line", cascade="all, delete-orphan")
+    vehicles: Mapped[list[Vehicle]] = relationship(back_populates="line")
+
+
+class Station(Base):
+    __tablename__ = "stations"
+    __table_args__ = (UniqueConstraint("line_id", "code", name="uq_station_line_code"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    line_id: Mapped[int] = mapped_column(ForeignKey("production_lines.id"), index=True)
+    code: Mapped[str] = mapped_column(String(40), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    sequence_order: Mapped[int]
+
+    line: Mapped[ProductionLine] = relationship(back_populates="stations")
+    equipment: Mapped[list[Equipment]] = relationship(back_populates="station", cascade="all, delete-orphan")
+
+
+class Equipment(Base):
+    __tablename__ = "equipment"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    station_id: Mapped[int] = mapped_column(ForeignKey("stations.id"), index=True)
+    asset_tag: Mapped[str] = mapped_column(String(60), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    equipment_type: Mapped[str] = mapped_column(String(80))
+
+    station: Mapped[Station] = relationship(back_populates="equipment")
+    sensor_readings: Mapped[list[SensorReading]] = relationship(back_populates="equipment")
+
+
+class Vehicle(Base):
+    __tablename__ = "vehicles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vin: Mapped[str] = mapped_column(String(17), unique=True, index=True)
+    model: Mapped[str] = mapped_column(String(80))
+    model_year: Mapped[int]
+    color: Mapped[str] = mapped_column(String(40))
+    line_id: Mapped[int] = mapped_column(ForeignKey("production_lines.id"), index=True)
+    current_station_id: Mapped[int | None] = mapped_column(ForeignKey("stations.id"), nullable=True, index=True)
+    build_status: Mapped[str] = mapped_column(String(40), default="in_progress")
+
+    line: Mapped[ProductionLine] = relationship(back_populates="vehicles")
+    current_station: Mapped[Station | None] = relationship()
+    production_events: Mapped[list[ProductionEvent]] = relationship(back_populates="vehicle")
+    defects: Mapped[list[Defect]] = relationship(back_populates="vehicle")
+
+
+class ProductionEvent(Base):
+    __tablename__ = "production_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"), index=True)
+    station_id: Mapped[int] = mapped_column(ForeignKey("stations.id"), index=True)
+    event_type: Mapped[str] = mapped_column(String(80), index=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    payload: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+
+    vehicle: Mapped[Vehicle] = relationship(back_populates="production_events")
+    station: Mapped[Station] = relationship()
+
+
+class SensorReading(Base):
+    __tablename__ = "sensor_readings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    equipment_id: Mapped[int] = mapped_column(ForeignKey("equipment.id"), index=True)
+    metric_name: Mapped[str] = mapped_column(String(80), index=True)
+    value: Mapped[float] = mapped_column(Float)
+    unit: Mapped[str] = mapped_column(String(40))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+
+    equipment: Mapped[Equipment] = relationship(back_populates="sensor_readings")
+
+
+class Defect(Base):
+    __tablename__ = "defects"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"), index=True)
+    station_id: Mapped[int] = mapped_column(ForeignKey("stations.id"), index=True)
+    severity: Mapped[str] = mapped_column(String(40), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="open", index=True)
+    description: Mapped[str] = mapped_column(Text)
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+
+    vehicle: Mapped[Vehicle] = relationship(back_populates="defects")
+    station: Mapped[Station] = relationship()
+    alerts: Mapped[list[QualityAlert]] = relationship(back_populates="defect")
+    investigations: Mapped[list[Investigation]] = relationship(back_populates="defect")
+
+
+class QualityAlert(Base):
+    __tablename__ = "quality_alerts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    defect_id: Mapped[int] = mapped_column(ForeignKey("defects.id"), index=True)
+    alert_code: Mapped[str] = mapped_column(String(60), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="open", index=True)
+    message: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+
+    defect: Mapped[Defect] = relationship(back_populates="alerts")
+
+
+class Investigation(Base):
+    __tablename__ = "investigations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    defect_id: Mapped[int] = mapped_column(ForeignKey("defects.id"), index=True)
+    title: Mapped[str] = mapped_column(String(160))
+    status: Mapped[str] = mapped_column(String(40), default="open", index=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    defect: Mapped[Defect] = relationship(back_populates="investigations")

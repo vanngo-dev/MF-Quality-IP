@@ -4,14 +4,26 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 1 establishes the project foundation:
+Phase 2 adds PostgreSQL-backed domain models and read-only manufacturing APIs on top of the Phase 1 foundation:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend status surface.
 - PostgreSQL, Redpanda, and Elasticsearch local services through Docker Compose.
+- SQLAlchemy ORM models for plants, production lines, stations, equipment, vehicles, events, readings, defects, alerts, and investigations.
+- Alembic migration for the initial domain schema.
+- Seed data for local demos and tests.
+- Read-only `/api/v1` endpoints for the manufacturing domain.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
+
+Detailed notes:
+
+- `docs/phase-01-foundation.md`
+- `docs/phase-02-postgres-domain-models.md`
+- `docs/data-model.md`
+- `docs/api-contracts.md`
+- `docs/testing-strategy.md`
 
 ## Repository Structure
 
@@ -23,6 +35,8 @@ docs/                 Phase notes and tutorial notes
 docker-compose.yml    Local platform services
 ```
 
+The FastAPI backend lives in `backend/`. This project does not use an `api/` folder.
+
 ## Prerequisites
 
 - Python 3.12+
@@ -31,21 +45,27 @@ docker-compose.yml    Local platform services
 
 ## Backend
 
-```bash
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
 cd backend
-python -m venv ../.venv
-../.venv/Scripts/python -m pip install -r requirements.txt -r requirements-dev.txt
-../.venv/Scripts/python -m uvicorn app.main:app --reload
+pip install -e .
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
 Backend API:
 
 - Health: http://localhost:8000/health
 - Docs: http://localhost:8000/docs
+- Plants: http://localhost:8000/api/v1/plants
+- Lines: http://localhost:8000/api/v1/lines
+- Stations: http://localhost:8000/api/v1/stations
+- Equipment: http://localhost:8000/api/v1/equipment
+- Vehicles: http://localhost:8000/api/v1/vehicles
 
 ## Frontend
 
-```bash
+```powershell
 cd frontend
 npm install
 npm run dev
@@ -57,7 +77,7 @@ Frontend app:
 
 ## Local Services
 
-```bash
+```powershell
 docker compose up -d postgres redpanda elasticsearch
 ```
 
@@ -67,18 +87,36 @@ Services:
 - Redpanda: localhost:9092
 - Elasticsearch: http://localhost:9200
 
+## Database Setup
+
+```powershell
+docker compose up postgres
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+```
+
+The seed command creates:
+
+- 1 plant
+- 2 production lines
+- 6 stations
+- 8 equipment records
+- 10 vehicles
+
 ## Tests
 
 Backend:
 
-```bash
+```powershell
 cd backend
-../.venv/Scripts/python -m pytest
+pytest
 ```
 
 Frontend:
 
-```bash
+```powershell
 cd frontend
 npm run test
 npm run build
@@ -86,6 +124,6 @@ npm run build
 
 Docker Compose syntax:
 
-```bash
+```powershell
 docker compose config
 ```

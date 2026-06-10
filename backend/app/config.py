@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     app_name: str = "Manufacturing Quality Intelligence Platform"
     environment: str = "local"
     frontend_origin: str = "http://localhost:5173"
-    database_url: str = "postgresql+psycopg://quality:quality@localhost:5432/quality"
+    database_url: str = "postgresql+psycopg2://quality:quality@localhost:5432/quality"
     kafka_bootstrap_servers: str = "localhost:9092"
     elasticsearch_url: str = "http://localhost:9200"
     ai_provider: str = "mock"

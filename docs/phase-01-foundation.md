@@ -19,9 +19,9 @@ Manufacturing quality systems depend on trustworthy operational signals. Before 
 
 ## Run Backend
 
-```bash
+```powershell
 cd backend
-../.venv/Scripts/python -m uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
 Visit:
@@ -31,7 +31,7 @@ Visit:
 
 ## Run Frontend
 
-```bash
+```powershell
 cd frontend
 npm run dev
 ```
@@ -42,24 +42,24 @@ Visit:
 
 ## Run Local Services
 
-```bash
+```powershell
 docker compose up -d postgres redpanda elasticsearch
 ```
 
 ## Automated Checks
 
-```bash
+```powershell
 cd backend
-../.venv/Scripts/python -m pytest
+pytest
 ```
 
-```bash
+```powershell
 cd frontend
 npm run test
 npm run build
 ```
 
-```bash
+```powershell
 docker compose config
 ```
 
