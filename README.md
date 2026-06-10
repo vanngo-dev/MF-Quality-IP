@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 3 adds the core quality workflow APIs on top of the Phase 1 foundation and Phase 2 PostgreSQL domain model:
+Phase 4 adds a standalone simulated manufacturing event generator on top of the Phase 1-3 backend foundation:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend status surface.
@@ -15,6 +15,8 @@ Phase 3 adds the core quality workflow APIs on top of the Phase 1 foundation and
 - Read-only `/api/v1` endpoints for the manufacturing domain.
 - Defect, quality alert, and investigation REST APIs.
 - Business validation for workflow severity, status, and foreign-key references.
+- Python event generator for station, sensor reading, inspection, and defect events.
+- Deterministic and random JSON event output for tests, demos, and future streaming.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -24,6 +26,9 @@ Detailed notes:
 - `docs/phase-01-foundation.md`
 - `docs/phase-02-postgres-domain-models.md`
 - `docs/phase-03-quality-workflow-apis.md`
+- `docs/phase-04-simulated-event-generator.md`
+- `docs/architecture.md`
+- `docs/event-contracts.md`
 - `docs/data-model.md`
 - `docs/api-contracts.md`
 - `docs/testing-strategy.md`
@@ -32,6 +37,7 @@ Detailed notes:
 
 ```text
 backend/              FastAPI application and backend tests
+event-generator/      Standalone simulated manufacturing event generator
 frontend/             React, TypeScript, and Vite application
 docs/                 Phase notes and tutorial notes
 .github/workflows/    GitHub Actions CI
@@ -148,4 +154,29 @@ curl http://localhost:8000/api/v1/stations
 curl http://localhost:8000/api/v1/defects
 curl http://localhost:8000/api/v1/alerts
 curl http://localhost:8000/api/v1/investigations
+```
+
+## Event Generator
+
+Phase 4 does not publish to Kafka yet. It prints valid JSON events to the console or to a JSON Lines file.
+
+```powershell
+cd event-generator
+pip install -e .
+pytest
+python -m app.main --mode deterministic
+python -m app.main --mode random --count 10
+```
+
+If editable install is not available:
+
+```powershell
+pip install pydantic pytest
+```
+
+Optional file output:
+
+```powershell
+python -m app.main --mode deterministic --output events.jsonl
+python -m app.main --mode random --count 100 --output events.jsonl
 ```

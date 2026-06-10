@@ -1,0 +1,1 @@
+"""Pure event generation helpers."""

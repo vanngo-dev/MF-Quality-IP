@@ -184,3 +184,71 @@ curl http://localhost:8000/api/v1/investigations
 ```bash
 git commit -m "phase-3 defect alert and investigation apis"
 ```
+
+## Phase 4: Simulated Manufacturing Event Generator
+
+### Video Title:
+
+Build a Manufacturing Event Generator with Python and Pydantic
+
+### Goal of This Phase:
+
+Create a standalone event generator that prints realistic manufacturing station, sensor reading, inspection, and defect events as JSON.
+
+### What We Build:
+
+- `event-generator/` Python package.
+- Pydantic event schemas for `BaseEvent`, `StationEvent`, `SensorReadingEvent`, and `DefectEvent`.
+- Deterministic event generation for stable tests and demos.
+- Random event generation for realistic local examples.
+- Optional JSON Lines output.
+- Tests for schemas, generation, and CLI behavior.
+
+### Why This Matters for Manufacturing Quality:
+
+Manufacturing quality platforms need event data before they can detect patterns, raise alerts, or stream records into downstream systems. Simulated events let us build and test that data flow before connecting to shop-floor equipment.
+
+### Code Walkthrough:
+
+1. Review that the backend still lives in `backend/`.
+2. Create the standalone `event-generator/` package.
+3. Define the base event contract in `schemas/events.py`.
+4. Add station, sensor, and defect generation helpers.
+5. Add deterministic and random scenarios.
+6. Add the CLI in `app/main.py`.
+
+### Testing Walkthrough:
+
+Run:
+
+```powershell
+cd event-generator
+pip install -e .
+pytest
+```
+
+Explain how tests validate UUIDs, timestamps, payload types, deterministic output, random counts, and CLI exit codes.
+
+### Manual Demo:
+
+```powershell
+cd event-generator
+python -m app.main --mode deterministic
+python -m app.main --mode random --count 10
+python -m app.main --mode deterministic --output events.jsonl
+Get-Content events.jsonl
+```
+
+### Common Errors:
+
+- `ModuleNotFoundError: pydantic`: run `pip install -e .` or `pip install pydantic pytest`.
+- `No module named app.main`: run from the `event-generator` folder.
+- JSON serialization issues with UUID or datetime: use `model_dump_json()` or the CLI output.
+- Invalid event count: pass a positive number to `--count`.
+- Kafka confusion: Kafka is intentionally not connected until Phase 5.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-4 simulated manufacturing event generator"
+```

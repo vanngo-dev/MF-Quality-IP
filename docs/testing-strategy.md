@@ -18,11 +18,44 @@ Backend tests verify:
 - Investigations can be created, listed, fetched by ID, and updated.
 - Investigation validation rejects invalid alert IDs and status values.
 
+## Phase 4 Event Generator Coverage
+
+Event generator tests verify:
+
+- Base event schema validates a valid event.
+- Base event schema rejects missing `event_id`.
+- Base event schema rejects invalid timestamps.
+- Station event payloads validate.
+- Sensor reading type and value validation works.
+- Defect severity and defect code validation works.
+- Deterministic generation returns the expected six events.
+- Deterministic generation includes station, sensor, inspection, and defect events.
+- Random generation respects the requested count.
+- Random generation produces valid event schemas.
+- Invalid random counts fail cleanly.
+- CLI deterministic and random modes exit successfully.
+
 ## Local Test Command
+
+Backend:
 
 ```powershell
 cd backend
 pytest
+```
+
+Event generator:
+
+```powershell
+cd event-generator
+pip install -e .
+pytest
+```
+
+If editable install is not available:
+
+```powershell
+pip install pydantic pytest
 ```
 
 ## Database Test Approach

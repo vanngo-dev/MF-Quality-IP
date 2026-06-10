@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "manufacturing-event-generator"
+version = "0.4.0"
+description = "Simulated manufacturing quality event generator."
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.7,<3",
+    "pytest>=8.3,<9",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+pythonpath = ["."]
+addopts = "-q"
