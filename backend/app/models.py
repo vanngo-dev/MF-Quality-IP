@@ -50,6 +50,8 @@ class Station(Base):
 
     line: Mapped[ProductionLine] = relationship(back_populates="stations")
     equipment: Mapped[list[Equipment]] = relationship(back_populates="station", cascade="all, delete-orphan")
+    defects: Mapped[list[Defect]] = relationship(back_populates="station")
+    alerts: Mapped[list[QualityAlert]] = relationship(back_populates="station")
 
 
 class Equipment(Base):
@@ -63,6 +65,8 @@ class Equipment(Base):
 
     station: Mapped[Station] = relationship(back_populates="equipment")
     sensor_readings: Mapped[list[SensorReading]] = relationship(back_populates="equipment")
+    defects: Mapped[list[Defect]] = relationship(back_populates="equipment")
+    alerts: Mapped[list[QualityAlert]] = relationship(back_populates="equipment")
 
 
 class Vehicle(Base):
@@ -114,41 +118,51 @@ class Defect(Base):
     __tablename__ = "defects"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    defect_code: Mapped[str] = mapped_column(String(80), index=True)
     vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"), index=True)
     station_id: Mapped[int] = mapped_column(ForeignKey("stations.id"), index=True)
+    equipment_id: Mapped[int | None] = mapped_column(ForeignKey("equipment.id"), nullable=True, index=True)
     severity: Mapped[str] = mapped_column(String(40), index=True)
     status: Mapped[str] = mapped_column(String(40), default="open", index=True)
     description: Mapped[str] = mapped_column(Text)
     detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
 
     vehicle: Mapped[Vehicle] = relationship(back_populates="defects")
-    station: Mapped[Station] = relationship()
-    alerts: Mapped[list[QualityAlert]] = relationship(back_populates="defect")
-    investigations: Mapped[list[Investigation]] = relationship(back_populates="defect")
+    station: Mapped[Station] = relationship(back_populates="defects")
+    equipment: Mapped[Equipment | None] = relationship(back_populates="defects")
 
 
 class QualityAlert(Base):
     __tablename__ = "quality_alerts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    defect_id: Mapped[int] = mapped_column(ForeignKey("defects.id"), index=True)
+    station_id: Mapped[int] = mapped_column(ForeignKey("stations.id"), index=True)
+    equipment_id: Mapped[int | None] = mapped_column(ForeignKey("equipment.id"), nullable=True, index=True)
     alert_code: Mapped[str] = mapped_column(String(60), index=True)
+    severity: Mapped[str] = mapped_column(String(40), index=True)
+    title: Mapped[str] = mapped_column(String(160))
+    description: Mapped[str] = mapped_column(Text)
+    evidence_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
     status: Mapped[str] = mapped_column(String(40), default="open", index=True)
-    message: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
 
-    defect: Mapped[Defect] = relationship(back_populates="alerts")
+    station: Mapped[Station] = relationship(back_populates="alerts")
+    equipment: Mapped[Equipment | None] = relationship(back_populates="alerts")
+    investigations: Mapped[list[Investigation]] = relationship(back_populates="alert")
 
 
 class Investigation(Base):
     __tablename__ = "investigations"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    defect_id: Mapped[int] = mapped_column(ForeignKey("defects.id"), index=True)
+    alert_id: Mapped[int] = mapped_column(ForeignKey("quality_alerts.id"), index=True)
     title: Mapped[str] = mapped_column(String(160))
-    status: Mapped[str] = mapped_column(String(40), default="open", index=True)
+    status: Mapped[str] = mapped_column(String(40), default="draft", index=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    root_cause_hypothesis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
     opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    defect: Mapped[Defect] = relationship(back_populates="investigations")
+    alert: Mapped[QualityAlert] = relationship(back_populates="investigations")

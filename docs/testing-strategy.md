@@ -1,6 +1,6 @@
 # Testing Strategy
 
-## Phase 2 Coverage
+## Phase 3 Coverage
 
 Backend tests verify:
 
@@ -11,6 +11,12 @@ Backend tests verify:
 - Read-only domain API endpoints return the expected seeded data.
 - Vehicle lookup by VIN returns a vehicle.
 - Unknown VIN lookup returns `404`.
+- Defects can be created, listed, and fetched by ID.
+- Defect validation rejects invalid vehicle IDs, station IDs, and severity values.
+- Alerts can be created, listed, fetched by ID, and updated by status.
+- Alert validation rejects invalid station IDs, severity values, and status values.
+- Investigations can be created, listed, fetched by ID, and updated.
+- Investigation validation rejects invalid alert IDs and status values.
 
 ## Local Test Command
 
@@ -41,3 +47,5 @@ After seeding PostgreSQL and starting the API, call the `/api/v1` endpoints with
 - 6 stations
 - 8 equipment records
 - 10 vehicles
+
+Then create one defect, one alert, and one investigation. Confirm invalid IDs return `404` and invalid status or severity values return `422`.

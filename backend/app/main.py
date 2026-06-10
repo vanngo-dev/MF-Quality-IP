@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import domain, health
+from app.routers import alerts, defects, domain, health, investigations
 
 
 def create_app() -> FastAPI:
@@ -24,6 +24,9 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(domain.router)
+    app.include_router(defects.router)
+    app.include_router(alerts.router)
+    app.include_router(investigations.router)
 
     @app.get("/")
     def root() -> dict[str, str]:

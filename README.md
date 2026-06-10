@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 2 adds PostgreSQL-backed domain models and read-only manufacturing APIs on top of the Phase 1 foundation:
+Phase 3 adds the core quality workflow APIs on top of the Phase 1 foundation and Phase 2 PostgreSQL domain model:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend status surface.
@@ -13,6 +13,8 @@ Phase 2 adds PostgreSQL-backed domain models and read-only manufacturing APIs on
 - Alembic migration for the initial domain schema.
 - Seed data for local demos and tests.
 - Read-only `/api/v1` endpoints for the manufacturing domain.
+- Defect, quality alert, and investigation REST APIs.
+- Business validation for workflow severity, status, and foreign-key references.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -21,6 +23,7 @@ Detailed notes:
 
 - `docs/phase-01-foundation.md`
 - `docs/phase-02-postgres-domain-models.md`
+- `docs/phase-03-quality-workflow-apis.md`
 - `docs/data-model.md`
 - `docs/api-contracts.md`
 - `docs/testing-strategy.md`
@@ -62,6 +65,9 @@ Backend API:
 - Stations: http://localhost:8000/api/v1/stations
 - Equipment: http://localhost:8000/api/v1/equipment
 - Vehicles: http://localhost:8000/api/v1/vehicles
+- Defects: http://localhost:8000/api/v1/defects
+- Alerts: http://localhost:8000/api/v1/alerts
+- Investigations: http://localhost:8000/api/v1/investigations
 
 ## Frontend
 
@@ -97,6 +103,12 @@ alembic upgrade head
 python -m app.db.seed
 ```
 
+If editable install is not available in your environment, install the backend dependencies directly:
+
+```powershell
+pip install fastapi "uvicorn[standard]" pytest httpx pydantic-settings sqlalchemy alembic psycopg2-binary
+```
+
 The seed command creates:
 
 - 1 plant
@@ -126,4 +138,14 @@ Docker Compose syntax:
 
 ```powershell
 docker compose config
+```
+
+## Manual Workflow Checks
+
+```powershell
+curl http://localhost:8000/api/v1/vehicles
+curl http://localhost:8000/api/v1/stations
+curl http://localhost:8000/api/v1/defects
+curl http://localhost:8000/api/v1/alerts
+curl http://localhost:8000/api/v1/investigations
 ```

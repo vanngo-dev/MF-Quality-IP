@@ -1,8 +1,8 @@
 # Data Model
 
-## Phase 2 Domain Model
+## Phase 3 Domain Model
 
-The Phase 2 database stores the stable manufacturing context that later quality workflows will use.
+The database stores stable manufacturing context and the first quality workflow records.
 
 ## Tables
 
@@ -15,9 +15,9 @@ The Phase 2 database stores the stable manufacturing context that later quality 
 | `vehicles` | Vehicles moving through the manufacturing process. |
 | `production_events` | Timestamped events emitted as a vehicle moves through stations. |
 | `sensor_readings` | Measurements from station equipment. |
-| `defects` | Quality issues found on a vehicle at a station. |
-| `quality_alerts` | Alerts raised from defects or quality rules. |
-| `investigations` | Human or AI-assisted investigation records for defects. |
+| `defects` | Quality issues found on a vehicle at a station, optionally tied to equipment. |
+| `quality_alerts` | Operational alerts raised from repeated defects, station evidence, or quality rules. |
+| `investigations` | Engineering root-cause workflow records opened from alerts. |
 
 ## Relationships
 
@@ -26,7 +26,21 @@ The Phase 2 database stores the stable manufacturing context that later quality 
 - A station has many equipment records.
 - A vehicle can have production events and defects.
 - Equipment can have sensor readings.
-- A defect can have quality alerts and investigations.
+- A defect references one vehicle and one station.
+- A defect may reference one equipment record.
+- An alert references one station and may reference one equipment record.
+- An alert stores evidence in `evidence_json`.
+- An investigation references one alert and stores root-cause notes and evidence.
+
+## Quality Workflow Concepts
+
+Defects represent specific product quality problems, such as a torque value below threshold on a vehicle.
+
+Quality alerts represent workflow-level signals, such as repeated defects at the same station in a short time window. Alerts connect to evidence through the `evidence_json` field.
+
+Investigations represent the engineering follow-up process. They capture summaries, root-cause hypotheses, evidence, and status changes while a quality team works toward containment or resolution.
+
+Validation protects data integrity by rejecting invalid severity values, invalid status values, and references to vehicles, stations, equipment, or alerts that do not exist.
 
 ## Seed Data
 

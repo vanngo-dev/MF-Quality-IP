@@ -107,3 +107,80 @@ curl http://localhost:8000/api/v1/vehicles
 ```bash
 git commit -m "phase-2 postgres domain models migrations and seed data"
 ```
+
+## Phase 3: Defect, Alert, and Investigation APIs
+
+### Video Title:
+
+Build Manufacturing Quality Workflow APIs with FastAPI and SQLAlchemy
+
+### Goal of This Phase:
+
+Create REST APIs that let quality teams record defects, raise alerts, and track engineering investigations.
+
+### What We Build:
+
+- Defect endpoints for create, list, and detail.
+- Alert endpoints for create, list, detail, and status update.
+- Investigation endpoints for create, list, detail, and update.
+- Typed Pydantic schemas for every request and response.
+- Tests for successful workflows and validation failures.
+
+### Why This Matters for Manufacturing Quality:
+
+Defects capture what went wrong on a vehicle. Alerts identify patterns that need attention. Investigations give engineers a place to track evidence, hypotheses, and root-cause progress.
+
+### Code Walkthrough:
+
+1. Review the existing `backend/` FastAPI structure.
+2. Update SQLAlchemy workflow models.
+3. Add the Alembic migration for workflow table changes.
+4. Add Pydantic request and response schemas.
+5. Add `defects.py`, `alerts.py`, and `investigations.py` routers.
+6. Wire the routers into `app.main`.
+
+### Testing Walkthrough:
+
+Run:
+
+```powershell
+cd backend
+pytest
+```
+
+Explain how tests reuse seeded vehicles and stations, then validate success cases, `404` invalid references, and `422` invalid enum values.
+
+### Manual Demo:
+
+```powershell
+docker compose up postgres
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+pytest
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Second terminal:
+
+```powershell
+curl http://localhost:8000/api/v1/vehicles
+curl http://localhost:8000/api/v1/stations
+curl http://localhost:8000/api/v1/defects
+curl http://localhost:8000/api/v1/alerts
+curl http://localhost:8000/api/v1/investigations
+```
+
+### Common Errors:
+
+- `404 Vehicle not found`: use a real vehicle ID from `/api/v1/vehicles`.
+- `404 Station not found`: use a real station ID from `/api/v1/stations`.
+- `422 Unprocessable Entity`: check allowed severity and status values.
+- Empty workflow lists: create records with the POST examples.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-3 defect alert and investigation apis"
+```
