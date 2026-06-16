@@ -1,8 +1,8 @@
 # Event Contracts
 
-## Phase 4 Scope
+## Phase 5 Scope
 
-Phase 4 generates realistic manufacturing quality events as JSON. It does not publish to Kafka or Redpanda yet. Streaming begins in Phase 5.
+Phase 5 publishes generated manufacturing quality events to Redpanda using Kafka-compatible producer APIs. It does not consume events or persist them to PostgreSQL yet.
 
 ## Base Event Contract
 
@@ -92,6 +92,29 @@ Deterministic mode prints a fixed sequence of events for repeatable tests and Yo
 
 Random mode prints the requested number of realistic events with valid UUIDs, ISO timestamps, and values inside manufacturing ranges.
 
+## Topic Routing
+
+| Event type | Topic |
+| --- | --- |
+| `station_entered` | `station.events` |
+| `operation_completed` | `station.events` |
+| `inspection_completed` | `station.events` |
+| `station_exited` | `station.events` |
+| `rework_required` | `station.events` |
+| `sensor_reading` | `sensor.readings` |
+| `defect_detected` | `quality.defects` |
+
+Additional platform topics are created in Phase 5 so later phases have a stable contract:
+
+- `quality.alerts`
+- `investigation.events`
+
+## Producer and Consumer Boundary
+
+The event generator is a producer. It creates events and publishes them to topics.
+
+The worker consumer is intentionally not built in Phase 5. Phase 6 will consume events and decide how to persist or process them.
+
 ## Manual Commands
 
 ```powershell
@@ -100,6 +123,8 @@ pip install -e .
 pytest
 python -m app.main --mode deterministic
 python -m app.main --mode random --count 10
+python -m app.main --mode deterministic --publish --broker localhost:19092
+python -m app.main --mode random --count 100 --publish --broker localhost:19092
 ```
 
 If editable install is not available:
@@ -119,4 +144,27 @@ Inspect output:
 
 ```powershell
 Get-Content events.jsonl
+```
+
+## Verify Streaming
+
+Start Redpanda:
+
+```powershell
+docker compose up redpanda redpanda-console
+```
+
+Create topics:
+
+```powershell
+docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
+docker compose exec redpanda rpk topic list
+```
+
+Consume events:
+
+```powershell
+docker compose exec redpanda rpk topic consume station.events --num 5
+docker compose exec redpanda rpk topic consume sensor.readings --num 5
+docker compose exec redpanda rpk topic consume quality.defects --num 5
 ```

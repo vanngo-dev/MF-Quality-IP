@@ -35,6 +35,21 @@ Event generator tests verify:
 - Invalid random counts fail cleanly.
 - CLI deterministic and random modes exit successfully.
 
+## Phase 5 Streaming Producer Coverage
+
+Producer tests verify:
+
+- Phase 4 deterministic generation still works.
+- Phase 4 random generation still works.
+- Station events route to `station.events`.
+- Sensor readings route to `sensor.readings`.
+- Defect events route to `quality.defects`.
+- Unknown event types fail clearly.
+- Broker configuration loads from CLI input or `KAFKA_BOOTSTRAP_SERVERS`.
+- Mock producer receives the expected topic and JSON payload.
+- Publish mode validates events before publishing.
+- Publish CLI deterministic and random modes exit successfully with the mock producer.
+
 ## Local Test Command
 
 Backend:
@@ -56,6 +71,12 @@ If editable install is not available:
 
 ```powershell
 pip install pydantic pytest
+```
+
+Phase 5 uses `kafka-python-ng` for the real producer:
+
+```powershell
+pip install pydantic pytest kafka-python-ng
 ```
 
 ## Database Test Approach
@@ -82,3 +103,25 @@ After seeding PostgreSQL and starting the API, call the `/api/v1` endpoints with
 - 10 vehicles
 
 Then create one defect, one alert, and one investigation. Confirm invalid IDs return `404` and invalid status or severity values return `422`.
+
+## Streaming Manual Verification
+
+Automated streaming tests use a mock producer so Redpanda is not required for normal test runs.
+
+Manual streaming verification uses Redpanda:
+
+```powershell
+docker compose up redpanda redpanda-console
+docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
+docker compose exec redpanda rpk topic list
+cd event-generator
+python -m app.main --mode deterministic --publish --broker localhost:19092
+```
+
+Then verify with Redpanda Console at http://localhost:8080 or with:
+
+```powershell
+docker compose exec redpanda rpk topic consume station.events --num 5
+docker compose exec redpanda rpk topic consume sensor.readings --num 5
+docker compose exec redpanda rpk topic consume quality.defects --num 5
+```

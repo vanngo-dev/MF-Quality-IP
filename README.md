@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 4 adds a standalone simulated manufacturing event generator on top of the Phase 1-3 backend foundation:
+Phase 5 connects the simulated event generator to Redpanda/Kafka-compatible streaming on top of the Phase 1-4 foundation:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend status surface.
@@ -17,6 +17,8 @@ Phase 4 adds a standalone simulated manufacturing event generator on top of the 
 - Business validation for workflow severity, status, and foreign-key references.
 - Python event generator for station, sensor reading, inspection, and defect events.
 - Deterministic and random JSON event output for tests, demos, and future streaming.
+- Kafka-compatible producer support for publishing generated events to Redpanda.
+- Streaming topics for station events, sensor readings, defects, alerts, and investigations.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -27,6 +29,7 @@ Detailed notes:
 - `docs/phase-02-postgres-domain-models.md`
 - `docs/phase-03-quality-workflow-apis.md`
 - `docs/phase-04-simulated-event-generator.md`
+- `docs/phase-05-redpanda-event-streaming.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
 - `docs/data-model.md`
@@ -96,7 +99,8 @@ docker compose up -d postgres redpanda elasticsearch
 Services:
 
 - PostgreSQL: localhost:5432
-- Redpanda: localhost:9092
+- Redpanda broker: localhost:19092
+- Redpanda Console: http://localhost:8080
 - Elasticsearch: http://localhost:9200
 
 ## Database Setup
@@ -158,7 +162,7 @@ curl http://localhost:8000/api/v1/investigations
 
 ## Event Generator
 
-Phase 4 does not publish to Kafka yet. It prints valid JSON events to the console or to a JSON Lines file.
+The event generator can print valid JSON events or publish them to Redpanda topics.
 
 ```powershell
 cd event-generator
@@ -166,6 +170,8 @@ pip install -e .
 pytest
 python -m app.main --mode deterministic
 python -m app.main --mode random --count 10
+python -m app.main --mode deterministic --publish --broker localhost:19092
+python -m app.main --mode random --count 10 --publish --broker localhost:19092
 ```
 
 If editable install is not available:
@@ -180,3 +186,36 @@ Optional file output:
 python -m app.main --mode deterministic --output events.jsonl
 python -m app.main --mode random --count 100 --output events.jsonl
 ```
+
+## Streaming
+
+Start Redpanda and Redpanda Console:
+
+```powershell
+docker compose up redpanda redpanda-console
+```
+
+Create topics:
+
+```powershell
+docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
+docker compose exec redpanda rpk topic list
+```
+
+Publish demo events:
+
+```powershell
+cd event-generator
+python -m app.main --mode deterministic --publish --broker localhost:19092
+```
+
+Makefile shortcuts are also available:
+
+```powershell
+make up-streaming
+make create-topics
+make produce-demo-events
+make produce-random-events
+```
+
+On Windows systems without Make, use the direct PowerShell commands above.

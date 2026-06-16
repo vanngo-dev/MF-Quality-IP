@@ -32,10 +32,37 @@ Deterministic mode produces a fixed event sequence. Use it for tests and recorde
 
 Random mode produces a requested number of realistic events. Use it to show variety during local development.
 
-## Why Kafka Is Not Used Yet
+## Phase 5 Redpanda Streaming
+
+Redpanda provides a Kafka-compatible event streaming layer for local development.
+
+Kafka-style streaming fits manufacturing systems because shop-floor activity is naturally event-driven: vehicles enter stations, tools report readings, inspections finish, and defects are detected over time.
+
+The Phase 5 event generator publishes to these topics:
+
+- `station.events`
+- `sensor.readings`
+- `quality.defects`
+
+It also creates these future workflow topics:
+
+- `quality.alerts`
+- `investigation.events`
+
+## Producer and Consumer Separation
+
+The event generator is the producer. It sends events to Redpanda.
+
+The worker consumer is intentionally separate. Consumers will be added in Phase 6 so event production can be tested before database persistence or alert rules are introduced.
+
+## Phase 4 Boundary
 
 Phase 4 validates event shape and event generation only. Kafka publishing is intentionally delayed until Phase 5 so the event contract can be tested before streaming infrastructure is added.
 
-## Preparing for Phase 5
+## How Phase 4 Prepared Streaming
 
-The generator already emits JSON Lines-compatible events with UUIDs and ISO timestamps. Phase 5 can reuse these event contracts and add a Redpanda/Kafka producer without changing the core payload design.
+The generator emits JSON Lines-compatible events with UUIDs and ISO timestamps. Phase 5 reuses these event contracts and adds a Redpanda/Kafka producer without changing the core payload design.
+
+## Phase 5 Boundary
+
+Phase 5 publishes events but does not save them to PostgreSQL. That keeps the streaming contract clear before Phase 6 adds worker consumption and persistence.

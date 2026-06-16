@@ -252,3 +252,79 @@ Get-Content events.jsonl
 ```bash
 git commit -m "phase-4 simulated manufacturing event generator"
 ```
+
+## Phase 5: Redpanda Event Streaming Producer
+
+### Video Title:
+
+Publish Manufacturing Quality Events to Redpanda with Python
+
+### Goal of This Phase:
+
+Connect the simulated event generator to Redpanda so generated manufacturing events can be published to Kafka-compatible topics.
+
+### What We Build:
+
+- Kafka producer wrapper using `kafka-python-ng`.
+- Topic routing service.
+- Publish mode for the event generator CLI.
+- Redpanda Console service in Docker Compose.
+- Makefile shortcuts for starting streaming, creating topics, and producing events.
+- Mock producer tests that do not require Redpanda.
+
+### Why This Matters for Manufacturing Quality:
+
+Manufacturing systems are event-driven. Station activity, sensor readings, inspections, and defects happen continuously. Kafka-style streaming lets those events move through the platform as they happen.
+
+### Code Walkthrough:
+
+1. Confirm Phase 4 event schemas stay in place.
+2. Add `kafka_producer.py`.
+3. Add topic routing in `event_publisher.py`.
+4. Update the CLI with `--publish` and `--broker`.
+5. Add Redpanda Console to Docker Compose.
+6. Add Makefile streaming commands.
+
+### Testing Walkthrough:
+
+Run:
+
+```powershell
+cd event-generator
+pytest
+```
+
+Explain topic routing tests, mock producer tests, broker configuration tests, and CLI publish tests.
+
+### Manual Demo:
+
+```powershell
+docker compose up redpanda redpanda-console
+docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
+docker compose exec redpanda rpk topic list
+cd event-generator
+python -m app.main --mode deterministic --publish --broker localhost:19092
+python -m app.main --mode random --count 10 --publish --broker localhost:19092
+```
+
+Open Redpanda Console at http://localhost:8080 and inspect:
+
+- `station.events`
+- `sensor.readings`
+- `quality.defects`
+
+### Common Errors:
+
+- Redpanda container not running: start `redpanda` and `redpanda-console`.
+- Wrong broker port: use `localhost:19092`.
+- Topic does not exist: run the topic creation command.
+- Producer dependency install issue: run `pip install pydantic pytest kafka-python-ng`.
+- `confluent-kafka` wheel/build issue on Windows: this project uses `kafka-python-ng`.
+- No events visible: check the topic that matches the event type.
+- Published but not saved to database: persistence starts in Phase 6.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-5 redpanda event streaming producer"
+```
