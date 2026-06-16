@@ -91,11 +91,13 @@ class ProductionEvent(Base):
     __tablename__ = "production_events"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[str | None] = mapped_column(String(36), unique=True, nullable=True, index=True)
     vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"), index=True)
     station_id: Mapped[int] = mapped_column(ForeignKey("stations.id"), index=True)
     event_type: Mapped[str] = mapped_column(String(80), index=True)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
     payload: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     vehicle: Mapped[Vehicle] = relationship(back_populates="production_events")
     station: Mapped[Station] = relationship()
@@ -105,19 +107,24 @@ class SensorReading(Base):
     __tablename__ = "sensor_readings"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[str | None] = mapped_column(String(36), unique=True, nullable=True, index=True)
     equipment_id: Mapped[int] = mapped_column(ForeignKey("equipment.id"), index=True)
+    station_id: Mapped[int | None] = mapped_column(ForeignKey("stations.id"), nullable=True, index=True)
     metric_name: Mapped[str] = mapped_column(String(80), index=True)
     value: Mapped[float] = mapped_column(Float)
     unit: Mapped[str] = mapped_column(String(40))
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     equipment: Mapped[Equipment] = relationship(back_populates="sensor_readings")
+    station: Mapped[Station | None] = relationship()
 
 
 class Defect(Base):
     __tablename__ = "defects"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[str | None] = mapped_column(String(36), unique=True, nullable=True, index=True)
     defect_code: Mapped[str] = mapped_column(String(80), index=True)
     vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"), index=True)
     station_id: Mapped[int] = mapped_column(ForeignKey("stations.id"), index=True)
@@ -126,6 +133,7 @@ class Defect(Base):
     status: Mapped[str] = mapped_column(String(40), default="open", index=True)
     description: Mapped[str] = mapped_column(Text)
     detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     vehicle: Mapped[Vehicle] = relationship(back_populates="defects")
     station: Mapped[Station] = relationship(back_populates="defects")

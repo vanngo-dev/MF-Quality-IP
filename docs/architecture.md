@@ -8,6 +8,7 @@ The project is being built one phase at a time.
 frontend/          React + TypeScript user interface
 backend/           FastAPI REST API and PostgreSQL domain model
 event-generator/   Standalone Python event simulator
+worker/            Standalone Python Kafka consumer and database ingestion worker
 docker-compose.yml Local PostgreSQL, Redpanda, and Elasticsearch services
 ```
 
@@ -53,7 +54,7 @@ It also creates these future workflow topics:
 
 The event generator is the producer. It sends events to Redpanda.
 
-The worker consumer is intentionally separate. Consumers will be added in Phase 6 so event production can be tested before database persistence or alert rules are introduced.
+The worker consumer is intentionally separate from the FastAPI application. FastAPI handles request/response APIs. The worker handles long-running topic consumption and persistence so API latency, consumer retries, and streaming failures do not get tangled together.
 
 ## Phase 4 Boundary
 
@@ -66,3 +67,29 @@ The generator emits JSON Lines-compatible events with UUIDs and ISO timestamps. 
 ## Phase 5 Boundary
 
 Phase 5 publishes events but does not save them to PostgreSQL. That keeps the streaming contract clear before Phase 6 adds worker consumption and persistence.
+
+## Phase 6 Worker Consumers
+
+Phase 6 adds a Python worker in `worker/`. It subscribes to the three producer topics from Phase 5:
+
+- `station.events`
+- `sensor.readings`
+- `quality.defects`
+
+The worker validates each event envelope, maps the payload to persistence data, resolves the referenced vehicle, station, and equipment rows, and writes to PostgreSQL.
+
+## Topic to Table Mapping
+
+| Topic | Persisted table |
+| --- | --- |
+| `station.events` | `production_events` |
+| `sensor.readings` | `sensor_readings` |
+| `quality.defects` | `defects` |
+
+The worker stores `event_id` on persisted event rows and checks that ID before inserting. This makes ingestion idempotent: if Redpanda redelivers an event or the generator publishes the same deterministic event twice, the worker logs a duplicate skip instead of creating another row.
+
+Invalid events are logged through a dead-letter placeholder. Phase 6 does not build a full dead-letter replay workflow; it only prevents malformed or unresolvable messages from crashing the worker.
+
+## Phase 6 Boundary
+
+Phase 6 persists production events, sensor readings, and defects. It does not generate `quality_alerts`, run rule-based alert logic, add frontend screens, add Elasticsearch indexing, or create AI summaries. Alert rules start in Phase 7.

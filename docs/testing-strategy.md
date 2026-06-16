@@ -50,6 +50,24 @@ Producer tests verify:
 - Publish mode validates events before publishing.
 - Publish CLI deterministic and random modes exit successfully with the mock producer.
 
+## Phase 6 Worker Consumer Coverage
+
+Worker tests verify:
+
+- Station events map to production event persistence data.
+- Sensor reading events map to sensor reading persistence data.
+- Defect events map to defect persistence data.
+- Duplicate `event_id` values are ignored safely.
+- Invalid station events are rejected and can be logged.
+- Invalid sensor reading events are rejected and can be logged.
+- Invalid defect events are rejected and can be logged.
+- The persistence service saves a production event.
+- The persistence service saves a sensor reading.
+- The persistence service saves a defect.
+- Worker configuration loads broker and database URL from environment variables.
+- Consumer topic subscription configuration includes `station.events`, `sensor.readings`, and `quality.defects`.
+- Kafka consumer setup is tested with a mocked Kafka module, not a live Redpanda broker.
+
 ## Local Test Command
 
 Backend:
@@ -67,13 +85,21 @@ pip install -e .
 pytest
 ```
 
+Worker:
+
+```powershell
+cd worker
+pip install -e .
+pytest
+```
+
 If editable install is not available:
 
 ```powershell
-pip install pydantic pytest
+pip install pydantic pytest kafka-python-ng sqlalchemy psycopg2-binary
 ```
 
-Phase 5 uses `kafka-python-ng` for the real producer:
+Phase 5 uses `kafka-python-ng` for the real producer. Phase 6 uses the same `kafka-python-ng` client for the worker consumer.
 
 ```powershell
 pip install pydantic pytest kafka-python-ng
@@ -125,3 +151,77 @@ docker compose exec redpanda rpk topic consume station.events --num 5
 docker compose exec redpanda rpk topic consume sensor.readings --num 5
 docker compose exec redpanda rpk topic consume quality.defects --num 5
 ```
+
+## Worker Manual Verification
+
+Automated worker tests do not require Redpanda or PostgreSQL. Manual verification uses both services:
+
+```powershell
+docker compose up postgres redpanda redpanda-console
+```
+
+Run migrations and seed data:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+```
+
+Start the API:
+
+```powershell
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Create topics:
+
+```powershell
+docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
+docker compose exec redpanda rpk topic list
+```
+
+Start the worker in another terminal:
+
+```powershell
+cd worker
+pip install -e .
+python -m app.main
+```
+
+Produce demo events in another terminal:
+
+```powershell
+cd event-generator
+python -m app.main --mode deterministic --publish --broker localhost:19092
+```
+
+Verify API and database state:
+
+```powershell
+curl http://localhost:8000/api/v1/defects
+curl http://localhost:8000/api/v1/stations
+curl http://localhost:8000/api/v1/vehicles
+docker compose exec postgres psql -U quality -d quality
+```
+
+```sql
+select count(*) from production_events;
+select count(*) from sensor_readings;
+select count(*) from defects;
+```
+
+Expected results:
+
+- Redpanda starts.
+- PostgreSQL starts.
+- Worker starts without crashing.
+- Event generator publishes events.
+- Worker consumes events.
+- Production events are persisted.
+- Sensor readings are persisted.
+- Defects are persisted.
+- Duplicate event IDs do not create duplicate rows.
+- Invalid events are logged and skipped.
+- No quality alerts are generated yet.

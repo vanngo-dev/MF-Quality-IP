@@ -1,8 +1,8 @@
 # Data Model
 
-## Phase 3 Domain Model
+## Phase 6 Domain Model
 
-The database stores stable manufacturing context and the first quality workflow records.
+The database stores stable manufacturing context, quality workflow records, and persisted event-ingestion records from Redpanda.
 
 ## Tables
 
@@ -26,6 +26,7 @@ The database stores stable manufacturing context and the first quality workflow 
 - A station has many equipment records.
 - A vehicle can have production events and defects.
 - Equipment can have sensor readings.
+- Sensor readings can also reference the station where the reading was captured.
 - A defect references one vehicle and one station.
 - A defect may reference one equipment record.
 - An alert references one station and may reference one equipment record.
@@ -41,6 +42,42 @@ Quality alerts represent workflow-level signals, such as repeated defects at the
 Investigations represent the engineering follow-up process. They capture summaries, root-cause hypotheses, evidence, and status changes while a quality team works toward containment or resolution.
 
 Validation protects data integrity by rejecting invalid severity values, invalid status values, and references to vehicles, stations, equipment, or alerts that do not exist.
+
+## Event Persistence Columns
+
+Phase 6 adds ingestion metadata to the persisted event tables:
+
+| Table | Ingestion columns |
+| --- | --- |
+| `production_events` | `event_id`, `created_at` |
+| `sensor_readings` | `event_id`, `station_id`, `created_at` |
+| `defects` | `event_id`, `created_at` |
+
+`event_id` is unique per ingested event table and is checked by the worker before inserts. This makes event persistence idempotent: duplicate Redpanda messages are skipped instead of being stored twice.
+
+The worker maps event timestamps into the existing database timestamp columns:
+
+| Event field | Database column |
+| --- | --- |
+| Station `event_timestamp` | `production_events.occurred_at` |
+| Sensor `event_timestamp` | `sensor_readings.recorded_at` |
+| Defect `event_timestamp` | `defects.detected_at` |
+
+Station event payloads are stored as JSON in `production_events.payload`. Sensor reading payload fields become typed columns: `reading_type` maps to `metric_name`, `reading_value` maps to `value`, and `unit` maps to `unit`.
+
+## Worker Foreign Key Resolution
+
+The worker keeps event consumption separate from the FastAPI API layer. It resolves event references to existing seeded domain rows before inserting:
+
+- Vehicles by payload `vin`, then deterministic UUID suffix.
+- Stations by payload `station_code`, then deterministic UUID suffix.
+- Equipment by payload `equipment_code`, then deterministic UUID suffix.
+
+If a referenced row cannot be resolved, the event is logged and skipped. The worker does not create missing vehicles, stations, or equipment during Phase 6.
+
+## Alerts Boundary
+
+Phase 6 does not create `quality_alerts`. Defects are persisted as facts, and rule-based alert generation starts in Phase 7.
 
 ## Seed Data
 

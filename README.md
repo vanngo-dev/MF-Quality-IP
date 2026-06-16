@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 5 connects the simulated event generator to Redpanda/Kafka-compatible streaming on top of the Phase 1-4 foundation:
+Phase 6 connects Redpanda/Kafka topics to PostgreSQL persistence on top of the Phase 1-5 foundation:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend status surface.
@@ -19,6 +19,9 @@ Phase 5 connects the simulated event generator to Redpanda/Kafka-compatible stre
 - Deterministic and random JSON event output for tests, demos, and future streaming.
 - Kafka-compatible producer support for publishing generated events to Redpanda.
 - Streaming topics for station events, sensor readings, defects, alerts, and investigations.
+- Separate Python worker that consumes `station.events`, `sensor.readings`, and `quality.defects`.
+- Idempotent event persistence into `production_events`, `sensor_readings`, and `defects`.
+- Invalid event logging with a dead-letter placeholder.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -41,6 +44,7 @@ Detailed notes:
 ```text
 backend/              FastAPI application and backend tests
 event-generator/      Standalone simulated manufacturing event generator
+worker/               Kafka consumer worker for event persistence
 frontend/             React, TypeScript, and Vite application
 docs/                 Phase notes and tutorial notes
 .github/workflows/    GitHub Actions CI
@@ -136,6 +140,20 @@ cd backend
 pytest
 ```
 
+Event generator:
+
+```powershell
+cd event-generator
+pytest
+```
+
+Worker:
+
+```powershell
+cd worker
+pytest
+```
+
 Frontend:
 
 ```powershell
@@ -219,3 +237,76 @@ make produce-random-events
 ```
 
 On Windows systems without Make, use the direct PowerShell commands above.
+
+## Worker Ingestion
+
+The worker is separate from FastAPI. FastAPI serves API requests, while the worker consumes Redpanda messages and writes accepted events to PostgreSQL.
+
+| Topic | Table |
+| --- | --- |
+| `station.events` | `production_events` |
+| `sensor.readings` | `sensor_readings` |
+| `quality.defects` | `defects` |
+
+Run the full local ingestion flow:
+
+```powershell
+docker compose up postgres redpanda redpanda-console
+```
+
+In another terminal:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Create topics:
+
+```powershell
+docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
+docker compose exec redpanda rpk topic list
+```
+
+Start the worker:
+
+```powershell
+cd worker
+pip install -e .
+python -m app.main
+```
+
+Publish deterministic demo events:
+
+```powershell
+cd event-generator
+python -m app.main --mode deterministic --publish --broker localhost:19092
+```
+
+Verify through the API and database:
+
+```powershell
+curl http://localhost:8000/api/v1/defects
+curl http://localhost:8000/api/v1/stations
+curl http://localhost:8000/api/v1/vehicles
+docker compose exec postgres psql -U quality -d quality
+```
+
+Useful SQL checks:
+
+```sql
+select count(*) from production_events;
+select count(*) from sensor_readings;
+select count(*) from defects;
+```
+
+The worker uses `KAFKA_BOOTSTRAP_SERVERS` and `DATABASE_URL`. The repo default database URL is:
+
+```text
+postgresql+psycopg2://quality:quality@localhost:5432/quality
+```
+
+Duplicate event IDs are skipped safely. Invalid events are logged and skipped. Quality alerts are not generated in Phase 6; rule-based alert generation starts in Phase 7.

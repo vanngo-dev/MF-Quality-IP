@@ -328,3 +328,143 @@ Open Redpanda Console at http://localhost:8080 and inspect:
 ```bash
 git commit -m "phase-5 redpanda event streaming producer"
 ```
+
+## Phase 6: Worker Consumers and Event Persistence
+
+### Video Title:
+
+Persist Manufacturing Quality Events from Redpanda to PostgreSQL
+
+### Goal of This Phase:
+
+Build a standalone Python worker that consumes Redpanda/Kafka events and persists station events, sensor readings, and defect events into PostgreSQL.
+
+### What We Build:
+
+- `worker/` Python package.
+- Kafka consumer configuration using the same `kafka-python-ng` client as Phase 5.
+- Topic-specific consumers for `station.events`, `sensor.readings`, and `quality.defects`.
+- Event mapper service that validates incoming JSON and maps payloads to persistence data.
+- Persistence service that writes to `production_events`, `sensor_readings`, and `defects`.
+- Idempotency checks based on `event_id`.
+- Invalid-event logging with a dead-letter placeholder.
+- Worker unit tests that do not require a live Redpanda broker.
+
+### Why This Matters for Manufacturing Quality:
+
+Manufacturing quality systems need streamed shop-floor events to become durable facts. Once station movement, equipment readings, and defects are stored in PostgreSQL, APIs and later analytics can inspect what happened on a vehicle, at a station, or on a piece of equipment.
+
+### Code Walkthrough:
+
+1. Confirm the FastAPI app is in `backend/`, not `api/`.
+2. Review Phase 5 topic routing from the event generator.
+3. Add the Phase 6 backend migration for `event_id` and ingestion timestamp columns.
+4. Create the worker package and CLI.
+5. Add mapper functions for station, sensor reading, and defect events.
+6. Add the persistence service and explain idempotency.
+7. Add topic consumers and the dispatcher.
+8. Explain why the worker does not create quality alerts yet.
+
+### Testing Walkthrough:
+
+Run:
+
+```powershell
+cd worker
+pip install -e .
+pytest
+```
+
+Then run the existing suites:
+
+```powershell
+cd backend
+pytest
+```
+
+```powershell
+cd event-generator
+pytest
+```
+
+Explain that worker tests use in-memory SQLite and mocked Kafka setup so normal unit tests do not require Docker or Redpanda.
+
+### Manual Demo:
+
+Start services:
+
+```powershell
+docker compose up postgres redpanda redpanda-console
+```
+
+Run migrations and seed database:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+```
+
+Start API:
+
+```powershell
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Create topics:
+
+```powershell
+docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
+docker compose exec redpanda rpk topic list
+```
+
+Start worker:
+
+```powershell
+cd worker
+pip install -e .
+python -m app.main
+```
+
+Produce demo events:
+
+```powershell
+cd event-generator
+python -m app.main --mode deterministic --publish --broker localhost:19092
+```
+
+Verify:
+
+```powershell
+curl http://localhost:8000/api/v1/defects
+curl http://localhost:8000/api/v1/stations
+curl http://localhost:8000/api/v1/vehicles
+docker compose exec postgres psql -U quality -d quality
+```
+
+```sql
+select count(*) from production_events;
+select count(*) from sensor_readings;
+select count(*) from defects;
+```
+
+### Common Errors:
+
+- Worker cannot connect to Redpanda: confirm `docker compose up postgres redpanda redpanda-console` is running.
+- Wrong Kafka broker port: use `localhost:19092` from the host.
+- Topics do not exist: run the `rpk topic create` command.
+- Worker cannot connect to PostgreSQL: confirm the `postgres` service is running.
+- `DATABASE_URL` is wrong: the repo default is `postgresql+psycopg2://quality:quality@localhost:5432/quality`.
+- Migrations not run: run `alembic upgrade head` from `backend/`.
+- Seed data missing: run `python -m app.db.seed`.
+- Foreign key errors from unknown vehicle/station/equipment IDs: publish deterministic demo events or add matching seed data.
+- Duplicate `event_id` handling confusion: duplicate messages are logged and skipped by design.
+- No defect visible because event did not map to valid seeded IDs: check event `vehicle_id`, `station_id`, `equipment_id`, and payload natural keys.
+- No quality alerts visible: alerts are intentionally not generated until Phase 7.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-6 worker consumers and event persistence"
+```

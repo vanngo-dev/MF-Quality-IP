@@ -1,8 +1,8 @@
 # Event Contracts
 
-## Phase 5 Scope
+## Phase 6 Scope
 
-Phase 5 publishes generated manufacturing quality events to Redpanda using Kafka-compatible producer APIs. It does not consume events or persist them to PostgreSQL yet.
+Phase 6 consumes generated manufacturing quality events from Redpanda and persists accepted events to PostgreSQL. It keeps the Phase 5 event contracts and adds worker-side validation, idempotency, and invalid-event logging.
 
 ## Base Event Contract
 
@@ -113,7 +113,33 @@ Additional platform topics are created in Phase 5 so later phases have a stable 
 
 The event generator is a producer. It creates events and publishes them to topics.
 
-The worker consumer is intentionally not built in Phase 5. Phase 6 will consume events and decide how to persist or process them.
+The worker consumer is separate from FastAPI. FastAPI serves API requests, while the worker runs as a long-lived process that subscribes to topics and writes database rows.
+
+## Phase 6 Persistence Mapping
+
+| Topic | Event type | Table | Important mapping |
+| --- | --- | --- | --- |
+| `station.events` | Station lifecycle events | `production_events` | `event_id`, `vehicle_id`, `station_id`, `event_type`, `event_timestamp` to `occurred_at`, payload to `payload` |
+| `sensor.readings` | `sensor_reading` | `sensor_readings` | `event_id`, `equipment_id`, `station_id`, payload `reading_type`, `reading_value`, `unit`, `event_timestamp` to `recorded_at` |
+| `quality.defects` | `defect_detected` | `defects` | `event_id`, payload `defect_code`, `severity`, `description`, `event_timestamp` to `detected_at`, default `status=open` |
+
+The event contract uses UUIDs because real shop-floor systems often use external identifiers. The database currently uses integer primary keys for seeded domain rows. The worker resolves natural keys from payloads first, such as `vin`, `station_code`, and `equipment_code`, then falls back to the deterministic demo UUID suffix convention.
+
+## Idempotency
+
+`event_id` is stored on persisted event rows. Before inserting, the worker checks whether that `event_id` already exists in any ingested event table. If it exists, the event is skipped and logged as `duplicate_event_id`.
+
+This matters because Kafka-compatible systems may redeliver messages during retries, rebalances, or local demo reruns. Idempotency keeps duplicate messages from becoming duplicate production events, sensor readings, or defects.
+
+## Invalid Events
+
+Invalid events are rejected before persistence. Examples include malformed JSON, missing `vehicle_id` on station or defect events, missing `equipment_id` on sensor readings, missing payload fields, unsupported event types, or foreign keys that cannot be resolved.
+
+The worker logs invalid events with a dead-letter placeholder. Full dead-letter topic processing is intentionally left for a later hardening phase.
+
+## Alerts Boundary
+
+No `quality_alerts` records are generated in Phase 6. The worker only persists raw operational events and defect facts. Rule-based alert generation starts in Phase 7.
 
 ## Manual Commands
 
@@ -130,7 +156,7 @@ python -m app.main --mode random --count 100 --publish --broker localhost:19092
 If editable install is not available:
 
 ```powershell
-pip install pydantic pytest
+pip install pydantic pytest kafka-python-ng
 ```
 
 Write JSON Lines output:
@@ -167,4 +193,20 @@ Consume events:
 docker compose exec redpanda rpk topic consume station.events --num 5
 docker compose exec redpanda rpk topic consume sensor.readings --num 5
 docker compose exec redpanda rpk topic consume quality.defects --num 5
+```
+
+## Run the Worker
+
+```powershell
+cd worker
+pip install -e .
+pytest
+python -m app.main
+```
+
+Useful options:
+
+```powershell
+python -m app.main --broker localhost:19092
+python -m app.main --topics station.events sensor.readings quality.defects
 ```
