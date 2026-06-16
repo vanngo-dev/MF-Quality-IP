@@ -75,9 +75,39 @@ The worker keeps event consumption separate from the FastAPI API layer. It resol
 
 If a referenced row cannot be resolved, the event is logged and skipped. The worker does not create missing vehicles, stations, or equipment during Phase 6.
 
-## Alerts Boundary
+## Rule-Based Alerts
 
-Phase 6 does not create `quality_alerts`. Defects are persisted as facts, and rule-based alert generation starts in Phase 7.
+Phase 7 creates `quality_alerts` from deterministic worker rules. Alerts are generated from persisted defects, sensor readings, and production events.
+
+Rules write these existing alert fields:
+
+| Column | Purpose |
+| --- | --- |
+| `alert_code` | Stable code for the rule that triggered. |
+| `station_id` | Station where the risk was detected. |
+| `equipment_id` | Equipment involved, when the rule is equipment-specific. |
+| `severity` | `medium`, `high`, or `critical`. |
+| `title` | Short operator-facing alert title. |
+| `description` | Human-readable explanation. |
+| `evidence_json` | Structured facts used by engineering investigations. |
+| `status` | Defaults to `open`. |
+| `created_at` | Alert creation timestamp. |
+
+`evidence_json` stores rule-specific facts such as defect counts, sensor reading values, thresholds, time windows, station codes, and equipment codes. This keeps alerts explainable and makes later investigation workflows easier.
+
+## Duplicate Alert Prevention
+
+The worker does not create a duplicate open alert when an open alert already exists with the same:
+
+- `alert_code`
+- `station_id`
+- `equipment_id`
+
+This simple prevention keeps repeated polling, Redpanda redelivery, or repeated deterministic demos from flooding the `quality_alerts` table with the same active condition.
+
+## Phase 7 Boundary
+
+Phase 7 adds deterministic alert generation only. Frontend dashboards start in Phase 8. AI summaries and machine learning are intentionally not part of this phase.
 
 ## Seed Data
 

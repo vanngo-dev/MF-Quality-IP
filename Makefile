@@ -2,7 +2,7 @@ STREAMING_TOPICS := station.events sensor.readings quality.defects quality.alert
 BROKER ?= localhost:19092
 RANDOM_COUNT ?= 100
 
-.PHONY: up-streaming create-topics produce-demo-events produce-random-events run-worker test-worker run-ingestion-demo
+.PHONY: up-streaming create-topics produce-demo-events produce-random-events produce-defect-spike run-worker test-worker run-ingestion-demo
 
 up-streaming:
 	docker compose up redpanda redpanda-console
@@ -16,6 +16,9 @@ produce-demo-events:
 
 produce-random-events:
 	cd event-generator && python -m app.main --mode random --count $(RANDOM_COUNT) --publish --broker $(BROKER)
+
+produce-defect-spike:
+	cd event-generator && python -m app.main --mode defect-spike --publish --broker $(BROKER)
 
 run-worker:
 	cd worker && python -m app.main --broker $(BROKER)

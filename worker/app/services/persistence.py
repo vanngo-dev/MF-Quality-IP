@@ -76,6 +76,21 @@ sensor_readings = Table(
     Column("created_at", DateTime(timezone=True), nullable=False),
 )
 
+quality_alerts = Table(
+    "quality_alerts",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("station_id", Integer, ForeignKey("stations.id"), nullable=False, index=True),
+    Column("equipment_id", Integer, ForeignKey("equipment.id"), nullable=True, index=True),
+    Column("alert_code", String(60), nullable=False, index=True),
+    Column("severity", String(40), nullable=False, index=True),
+    Column("title", String(160), nullable=False),
+    Column("description", Text, nullable=False),
+    Column("evidence_json", JSON, nullable=False),
+    Column("status", String(40), nullable=False, index=True),
+    Column("created_at", DateTime(timezone=True), nullable=False, index=True),
+)
+
 defects = Table(
     "defects",
     metadata,

@@ -339,6 +339,8 @@ Persist Manufacturing Quality Events from Redpanda to PostgreSQL
 
 Build a standalone Python worker that consumes Redpanda/Kafka events and persists station events, sensor readings, and defect events into PostgreSQL.
 
+Detailed guide: `docs/phase6.md`
+
 ### What We Build:
 
 - `worker/` Python package.
@@ -467,4 +469,138 @@ select count(*) from defects;
 
 ```bash
 git commit -m "phase-6 worker consumers and event persistence"
+```
+
+## Phase 7: Rule-Based Quality Alert Engine
+
+### Video Title:
+
+Build a Rule-Based Manufacturing Quality Alert Engine
+
+### Goal of This Phase:
+
+Add deterministic quality intelligence to the worker so persisted defects, sensor readings, and production events can generate quality alerts.
+
+Detailed guide: `docs/phase7.md`
+
+### What We Build:
+
+- `worker/app/rules/` rule engine package.
+- Repeated station defect rule.
+- Equipment temperature threshold rule.
+- Torque out-of-tolerance rule.
+- Low vision confidence rule.
+- Same-code defect spike rule.
+- Consecutive inspection failure rule.
+- Alert persistence service for `quality_alerts`.
+- Duplicate open alert prevention.
+- `quality.alerts` publishing when alerts are created.
+- `defect-spike` event-generator mode for deterministic demos.
+
+### Why This Matters for Manufacturing Quality:
+
+Before AI or machine learning, quality teams need deterministic rules that are explainable and repeatable. A known tolerance breach, a defect spike, or repeated failures at a station should create the same alert every time, with evidence that engineers can inspect.
+
+### Code Walkthrough:
+
+1. Review the Phase 6 worker flow.
+2. Add alert candidates and the rule engine.
+3. Add each rule module and explain its threshold.
+4. Add the alert service and duplicate prevention.
+5. Publish created alerts to `quality.alerts`.
+6. Wire rule execution after successful event persistence.
+7. Add `defect-spike` mode to the event generator.
+8. Confirm no frontend dashboard work is added in Phase 7.
+
+### Testing Walkthrough:
+
+Run worker tests:
+
+```powershell
+cd worker
+pytest
+```
+
+Run event-generator tests:
+
+```powershell
+cd event-generator
+pytest
+```
+
+Run backend tests:
+
+```powershell
+cd backend
+pytest
+```
+
+Explain how each rule has a trigger test and a below-threshold test, and how alert persistence, duplicate prevention, publisher calls, and rule-engine integration are tested.
+
+### Manual Demo:
+
+Start services:
+
+```powershell
+docker compose up postgres redpanda redpanda-console
+```
+
+Run migrations and seed database:
+
+```powershell
+cd backend
+alembic upgrade head
+python -m app.db.seed
+```
+
+Start API:
+
+```powershell
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Create topics:
+
+```powershell
+docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
+docker compose exec redpanda rpk topic list
+```
+
+Start worker:
+
+```powershell
+cd worker
+pip install -e .
+python -m app.main
+```
+
+Produce deterministic defect spike:
+
+```powershell
+cd event-generator
+python -m app.main --mode defect-spike --publish --broker localhost:19092
+```
+
+Verify alerts:
+
+```powershell
+curl http://localhost:8000/api/v1/alerts
+docker compose exec redpanda rpk topic consume quality.alerts --num 5
+```
+
+### Common Errors:
+
+- No alerts created because threshold was not reached: use `--mode defect-spike`.
+- Defect spike uses IDs not present in seed data: run `python -m app.db.seed`.
+- Worker not running: start `python -m app.main` from `worker/`.
+- Redpanda topic missing: create topics with `rpk topic create`.
+- `quality.alerts` topic not created: include it in the topic creation command.
+- Duplicate alerts appearing repeatedly: confirm the existing open alert duplicate check is active.
+- Alerts created in DB but not visible because API is pointing at wrong database: align backend and worker `DATABASE_URL`.
+- Sensor payload missing `lower_limit` or `upper_limit`: torque rules fall back to `40.0` and `45.0`.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-7 rule based quality alert engine"
 ```

@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 6 connects Redpanda/Kafka topics to PostgreSQL persistence on top of the Phase 1-5 foundation:
+Phase 7 adds a deterministic rule-based quality alert engine on top of the Phase 1-6 foundation:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend status surface.
@@ -22,6 +22,9 @@ Phase 6 connects Redpanda/Kafka topics to PostgreSQL persistence on top of the P
 - Separate Python worker that consumes `station.events`, `sensor.readings`, and `quality.defects`.
 - Idempotent event persistence into `production_events`, `sensor_readings`, and `defects`.
 - Invalid event logging with a dead-letter placeholder.
+- Rule-based alert engine for repeated defects, sensor threshold breaches, defect spikes, and inspection failures.
+- Alert persistence into `quality_alerts`.
+- Alert publishing to the `quality.alerts` Redpanda topic.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -33,6 +36,8 @@ Detailed notes:
 - `docs/phase-03-quality-workflow-apis.md`
 - `docs/phase-04-simulated-event-generator.md`
 - `docs/phase-05-redpanda-event-streaming.md`
+- `docs/phase6.md`
+- `docs/phase7.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
 - `docs/data-model.md`
@@ -234,6 +239,7 @@ make up-streaming
 make create-topics
 make produce-demo-events
 make produce-random-events
+make produce-defect-spike
 ```
 
 On Windows systems without Make, use the direct PowerShell commands above.
@@ -309,4 +315,33 @@ The worker uses `KAFKA_BOOTSTRAP_SERVERS` and `DATABASE_URL`. The repo default d
 postgresql+psycopg2://quality:quality@localhost:5432/quality
 ```
 
-Duplicate event IDs are skipped safely. Invalid events are logged and skipped. Quality alerts are not generated in Phase 6; rule-based alert generation starts in Phase 7.
+Duplicate event IDs are skipped safely. Invalid events are logged and skipped. Phase 7 generates rule-based quality alerts after successful worker persistence.
+
+## Rule-Based Alerts
+
+Phase 7 runs deterministic quality rules inside the worker after events are persisted. Rules inspect persisted defects, sensor readings, and production events, then create `quality_alerts` records with evidence.
+
+Implemented alert rules:
+
+- `REPEATED_DEFECT_STATION`
+- `EQUIPMENT_TEMPERATURE_HIGH`
+- `TORQUE_OUT_OF_TOLERANCE`
+- `VISION_CONFIDENCE_LOW`
+- `DEFECT_CODE_SPIKE`
+- `CONSECUTIVE_INSPECTION_FAILURES`
+
+Produce a deterministic defect spike:
+
+```powershell
+cd event-generator
+python -m app.main --mode defect-spike --publish --broker localhost:19092
+```
+
+Verify alerts:
+
+```powershell
+curl http://localhost:8000/api/v1/alerts
+docker compose exec redpanda rpk topic consume quality.alerts --num 5
+```
+
+The frontend dashboard is intentionally not part of Phase 7. Frontend work starts in Phase 8.

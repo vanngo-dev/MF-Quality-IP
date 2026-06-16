@@ -2,7 +2,7 @@ import json
 import subprocess
 import sys
 
-from app.generators.scenarios import generate_deterministic_events
+from app.generators.scenarios import generate_defect_spike_events, generate_deterministic_events
 from app.main import event_to_json_line
 from app.schemas.events import BaseEvent
 
@@ -41,3 +41,24 @@ def test_cli_deterministic_mode_exits_successfully() -> None:
 
     assert result.returncode == 0
     assert len(result.stdout.strip().splitlines()) == 6
+
+
+def test_defect_spike_generation_triggers_rule_inputs() -> None:
+    events = generate_defect_spike_events()
+    event_types = [event.event_type for event in events]
+
+    assert len(events) == 7
+    assert event_types.count("defect_detected") == 5
+    assert event_types.count("sensor_reading") == 2
+
+
+def test_cli_defect_spike_mode_exits_successfully() -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "app.main", "--mode", "defect-spike"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert len(result.stdout.strip().splitlines()) == 7

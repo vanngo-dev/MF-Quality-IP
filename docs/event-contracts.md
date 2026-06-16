@@ -139,7 +139,48 @@ The worker logs invalid events with a dead-letter placeholder. Full dead-letter 
 
 ## Alerts Boundary
 
-No `quality_alerts` records are generated in Phase 6. The worker only persists raw operational events and defect facts. Rule-based alert generation starts in Phase 7.
+Phase 7 generates `quality_alerts` records with deterministic rules. When an alert is created, the worker publishes an alert event to `quality.alerts`.
+
+Alert event payloads include the persisted alert fields:
+
+```json
+{
+  "id": 1,
+  "alert_code": "REPEATED_DEFECT_STATION",
+  "station_id": 1,
+  "equipment_id": null,
+  "severity": "high",
+  "title": "Repeated defects detected at A-BODY",
+  "description": "5 defects detected at the same station within 30 minutes.",
+  "evidence_json": {
+    "station_id": 1,
+    "station_code": "A-BODY",
+    "defect_count": 5,
+    "window_minutes": 30
+  },
+  "status": "open",
+  "created_at": "iso_datetime"
+}
+```
+
+`evidence_json` is the handoff between deterministic rules and engineering investigations. It records the counts, thresholds, readings, station IDs, equipment IDs, and windows that caused the alert.
+
+Frontend dashboard work is intentionally not part of Phase 7. It starts in Phase 8.
+
+## Defect Spike Demo Contract
+
+Phase 7 adds a deterministic event-generator mode:
+
+```powershell
+cd event-generator
+python -m app.main --mode defect-spike --publish --broker localhost:19092
+```
+
+The scenario publishes:
+
+- 5 `torque_out_of_spec` defects within 30 minutes
+- 1 `torque_nm` reading outside tolerance
+- 1 `vision_confidence` reading below threshold
 
 ## Manual Commands
 

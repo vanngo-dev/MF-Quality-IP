@@ -59,6 +59,8 @@ class SensorReadingData:
     reading_value: float
     unit: str
     reading_timestamp: datetime
+    lower_limit: float | None = None
+    upper_limit: float | None = None
     equipment_code: str | None = None
     station_code: str | None = None
 
@@ -122,6 +124,18 @@ def _optional_payload_string(payload: Mapping[str, Any], field_name: str) -> str
     return str(value)
 
 
+def _optional_payload_float(payload: Mapping[str, Any], field_name: str) -> float | None:
+    value = payload.get(field_name)
+
+    if value is None or value == "":
+        return None
+
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:
+        raise InvalidEventError(f"payload.{field_name} must be numeric when provided.") from exc
+
+
 def map_station_event(raw_event: str | bytes | Mapping[str, Any]) -> ProductionEventData:
     event = _validate_envelope(raw_event)
 
@@ -167,6 +181,8 @@ def map_sensor_reading_event(raw_event: str | bytes | Mapping[str, Any]) -> Sens
         reading_value=numeric_value,
         unit=str(_required_payload_value(event.payload, "unit")),
         reading_timestamp=event.event_timestamp,
+        lower_limit=_optional_payload_float(event.payload, "lower_limit"),
+        upper_limit=_optional_payload_float(event.payload, "upper_limit"),
         equipment_code=_optional_payload_string(event.payload, "equipment_code"),
         station_code=_optional_payload_string(event.payload, "station_code"),
     )

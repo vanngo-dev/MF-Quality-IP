@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from typing import Iterable
 
-from app.generators.scenarios import generate_deterministic_events, generate_random_events
+from app.generators.scenarios import generate_defect_spike_events, generate_deterministic_events, generate_random_events
 from app.producers.kafka_producer import InMemoryEventProducer, KafkaEventProducer, ProducerConfig
 from app.schemas.events import BaseEvent
 from app.services.event_publisher import format_publish_summary, publish_events, resolve_broker
@@ -27,7 +27,7 @@ def write_events(events: Iterable[BaseEvent], output: Path | None = None) -> Non
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate simulated manufacturing quality events.")
-    parser.add_argument("--mode", choices=["deterministic", "random"], required=True)
+    parser.add_argument("--mode", choices=["deterministic", "random", "defect-spike"], required=True)
     parser.add_argument("--count", type=int, default=10, help="Number of events to generate in random mode.")
     parser.add_argument("--output", type=Path, help="Optional JSON Lines output file.")
     parser.add_argument("--publish", action="store_true", help="Publish generated events to Kafka-compatible topics.")
@@ -46,6 +46,8 @@ def main() -> int:
 
     if args.mode == "deterministic":
         events = generate_deterministic_events()
+    elif args.mode == "defect-spike":
+        events = generate_defect_spike_events()
     else:
         events = generate_random_events(args.count)
 

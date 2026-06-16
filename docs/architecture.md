@@ -78,6 +78,8 @@ Phase 6 adds a Python worker in `worker/`. It subscribes to the three producer t
 
 The worker validates each event envelope, maps the payload to persistence data, resolves the referenced vehicle, station, and equipment rows, and writes to PostgreSQL.
 
+See `docs/phase6.md` for the Phase 6 worker runbook and troubleshooting guide.
+
 ## Topic to Table Mapping
 
 | Topic | Persisted table |
@@ -93,3 +95,23 @@ Invalid events are logged through a dead-letter placeholder. Phase 6 does not bu
 ## Phase 6 Boundary
 
 Phase 6 persists production events, sensor readings, and defects. It does not generate `quality_alerts`, run rule-based alert logic, add frontend screens, add Elasticsearch indexing, or create AI summaries. Alert rules start in Phase 7.
+
+## Phase 7 Rule-Based Alert Engine
+
+Phase 7 adds deterministic quality intelligence inside the worker. After the worker persists a new defect, sensor reading, or production event, it runs a rule engine against persisted data and creates `quality_alerts` records when thresholds are met.
+
+The Phase 7 flow is:
+
+```text
+event-generator -> Redpanda topics -> worker consumers -> PostgreSQL events -> rule engine -> quality_alerts -> quality.alerts topic -> FastAPI read endpoints
+```
+
+Rules are deterministic and evidence-based. They cover repeated defects at the same station, high equipment temperature, torque readings outside tolerance, low vision confidence, defect-code spikes, and consecutive inspection failures.
+
+Duplicate open alerts are prevented by checking for an existing open alert with the same `alert_code`, `station_id`, and `equipment_id`. Alert payloads are also published to `quality.alerts` when an alert is created.
+
+See `docs/phase7.md` for the Phase 7 runbook and troubleshooting guide.
+
+## Phase 7 Boundary
+
+Phase 7 does not add frontend dashboard work, Elasticsearch indexing, AI summaries, or machine learning. Frontend dashboard work starts in Phase 8.

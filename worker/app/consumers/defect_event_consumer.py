@@ -2,13 +2,21 @@ from __future__ import annotations
 
 from app.services.event_mapper import QUALITY_DEFECTS_TOPIC, map_defect_event
 from app.services.persistence import PersistenceResult, PersistenceService
+from app.rules.engine import RuleContext, RuleEngine
 
 
 class DefectEventConsumer:
     topic = QUALITY_DEFECTS_TOPIC
 
-    def __init__(self, persistence: PersistenceService) -> None:
+    def __init__(self, persistence: PersistenceService, rule_engine: RuleEngine | None = None) -> None:
         self._persistence = persistence
+        self._rule_engine = rule_engine
 
     def handle(self, raw_event: str | bytes) -> PersistenceResult:
-        return self._persistence.save_defect(map_defect_event(raw_event))
+        data = map_defect_event(raw_event)
+        result = self._persistence.save_defect(data)
+
+        if result.inserted and self._rule_engine is not None:
+            self._rule_engine.run(RuleContext(persistence_result=result, event_data=data))
+
+        return result

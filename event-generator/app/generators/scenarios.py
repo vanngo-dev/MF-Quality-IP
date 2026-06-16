@@ -131,6 +131,52 @@ def generate_deterministic_events() -> list[BaseEvent]:
     ]
 
 
+def generate_defect_spike_events() -> list[BaseEvent]:
+    context = DETERMINISTIC_CONTEXT
+    defect_events = [
+        build_defect_event(
+            event_id=_event_id(7001 + index),
+            event_timestamp=BASE_TIME + timedelta(minutes=index * 5),
+            plant_id=context.plant_id,
+            line_id=context.line_id,
+            station_id=context.station_id,
+            equipment_id=context.equipment_id,
+            vehicle_id=context.vehicle_id,
+            defect_code="torque_out_of_spec",
+            severity="high",
+        )
+        for index in range(5)
+    ]
+
+    return [
+        *defect_events,
+        build_sensor_reading_event(
+            event_id=_event_id(7010),
+            event_timestamp=BASE_TIME + timedelta(minutes=25),
+            plant_id=context.plant_id,
+            line_id=context.line_id,
+            station_id=context.station_id,
+            equipment_id=context.equipment_id,
+            vehicle_id=context.vehicle_id,
+            reading_type="torque_nm",
+            reading_value=47.2,
+            equipment_code=context.equipment_code,
+        ),
+        build_sensor_reading_event(
+            event_id=_event_id(7011),
+            event_timestamp=BASE_TIME + timedelta(minutes=26),
+            plant_id=context.plant_id,
+            line_id=context.line_id,
+            station_id=context.station_id,
+            equipment_id=context.equipment_id,
+            vehicle_id=context.vehicle_id,
+            reading_type="vision_confidence",
+            reading_value=0.72,
+            equipment_code=context.equipment_code,
+        ),
+    ]
+
+
 def _random_context(random: Random) -> ManufacturingContext:
     station_number = random.randint(1, 6)
     vehicle_number = random.randint(1, 9999)

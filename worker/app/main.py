@@ -9,6 +9,8 @@ from app.consumers.base_consumer import ConsumerConfig, ConsumerDispatcher, DEFA
 from app.consumers.defect_event_consumer import DefectEventConsumer
 from app.consumers.sensor_reading_consumer import SensorReadingConsumer
 from app.consumers.station_event_consumer import StationEventConsumer
+from app.rules.engine import RuleEngine
+from app.services.alert_service import AlertService, KafkaAlertPublisher
 from app.services.persistence import PersistenceService, make_session_factory
 
 DEFAULT_BROKER = "localhost:19092"
@@ -44,19 +46,22 @@ def load_config(args: argparse.Namespace) -> WorkerConfig:
     return WorkerConfig(broker=broker, database_url=database_url, topics=topics, group_id=args.group_id)
 
 
-def build_dispatcher(persistence: PersistenceService) -> ConsumerDispatcher:
+def build_dispatcher(persistence: PersistenceService, rule_engine: RuleEngine | None = None) -> ConsumerDispatcher:
     return ConsumerDispatcher(
         (
-            StationEventConsumer(persistence),
-            SensorReadingConsumer(persistence),
-            DefectEventConsumer(persistence),
+            StationEventConsumer(persistence, rule_engine),
+            SensorReadingConsumer(persistence, rule_engine),
+            DefectEventConsumer(persistence, rule_engine),
         )
     )
 
 
 def run_worker(config: WorkerConfig) -> None:
     session_factory = make_session_factory(config.database_url)
-    dispatcher = build_dispatcher(PersistenceService(session_factory))
+    alert_publisher = KafkaAlertPublisher(config.broker)
+    alert_service = AlertService(session_factory, alert_publisher)
+    rule_engine = RuleEngine(session_factory, alert_service)
+    dispatcher = build_dispatcher(PersistenceService(session_factory), rule_engine)
     consumer = create_kafka_consumer(
         ConsumerConfig(
             bootstrap_servers=config.broker,
@@ -74,6 +79,7 @@ def run_worker(config: WorkerConfig) -> None:
         logger.info("Worker stopped by user.")
     finally:
         consumer.close()
+        alert_publisher.close()
 
 
 def main() -> int:
