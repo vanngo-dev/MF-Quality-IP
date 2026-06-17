@@ -81,6 +81,76 @@ The investigations API returns `opened_at` and `updated_at`. Phase 9 displays `o
 
 The frontend does not call Elasticsearch or search endpoints in Phase 9. Search starts in Phase 10.
 
+## Phase 10 Search
+
+Search endpoints read from Elasticsearch indexes built from PostgreSQL records.
+
+```text
+GET /api/v1/search?q=torque
+GET /api/v1/search/defects?q=torque
+GET /api/v1/search/alerts?q=defect
+GET /api/v1/search/investigations?q=root
+GET /api/v1/search/events?q=station
+```
+
+Empty or whitespace-only `q` values return `400`:
+
+```json
+{
+  "detail": "Search query must not be empty."
+}
+```
+
+Grouped search response:
+
+```json
+{
+  "query": "torque",
+  "results": {
+    "defects": [],
+    "alerts": [],
+    "investigations": [],
+    "events": []
+  }
+}
+```
+
+Specialized search response:
+
+```json
+{
+  "query": "torque",
+  "results": []
+}
+```
+
+Each result includes:
+
+```json
+{
+  "id": "1",
+  "type": "defect",
+  "title": "TORQUE_LOW",
+  "summary": "Torque value below threshold",
+  "score": 3.5,
+  "source": {
+    "id": 1,
+    "defect_code": "TORQUE_LOW",
+    "vin": "MQPLANT0000000001",
+    "station_code": "ST-TORQUE"
+  }
+}
+```
+
+Search indexes:
+
+| Index | Source records |
+| --- | --- |
+| `manufacturing-defects` | `defects` |
+| `manufacturing-alerts` | `quality_alerts` |
+| `manufacturing-investigations` | `investigations` |
+| `manufacturing-events` | `production_events` |
+
 ## Example Manual Checks
 
 ```powershell

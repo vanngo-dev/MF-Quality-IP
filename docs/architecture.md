@@ -167,3 +167,54 @@ Investigations remain a worklist table in Phase 9. The full investigation detail
 ## Phase 9 Boundary
 
 Phase 9 connects dashboard pages to live backend data. It does not add Elasticsearch search, search UI, AI summaries, or the full investigation detail workflow. Elasticsearch search starts in Phase 10.
+
+## Phase 10 Elasticsearch Quality Search
+
+Phase 10 adds Elasticsearch as a search index for quality records. PostgreSQL remains the system of record. Elasticsearch stores denormalized search documents that are optimized for finding records by VIN, station, equipment, defect code, alert text, investigation text, and event summary data.
+
+The search flow is:
+
+```text
+PostgreSQL records -> reindex command -> Elasticsearch indexes -> FastAPI search API -> React search page
+```
+
+Indexes:
+
+- `manufacturing-defects`
+- `manufacturing-alerts`
+- `manufacturing-investigations`
+- `manufacturing-events`
+
+The backend uses:
+
+```text
+ELASTICSEARCH_URL=http://localhost:9200
+```
+
+The reindex command reads defects, alerts, investigations, and production events from PostgreSQL, builds search documents, and writes them to Elasticsearch:
+
+```powershell
+cd backend
+python -m app.search.reindex
+```
+
+The search API returns grouped results from:
+
+```text
+GET /api/v1/search?q=torque
+```
+
+Specialized endpoints return one result group:
+
+```text
+GET /api/v1/search/defects?q=torque
+GET /api/v1/search/alerts?q=defect
+GET /api/v1/search/investigations?q=root
+GET /api/v1/search/events?q=station
+```
+
+The frontend adds `/search` and a sidebar Search link. The page submits a free-text query, shows loading and error states, and renders grouped results for defects, alerts, investigations, and events.
+
+## Phase 10 Boundary
+
+Phase 10 adds basic indexing, reindexing, backend search APIs, and a frontend search page. It does not add advanced filters, full investigation lifecycle screens, or AI summaries. The full investigation workflow starts in Phase 11, and AI summaries start in Phase 12.

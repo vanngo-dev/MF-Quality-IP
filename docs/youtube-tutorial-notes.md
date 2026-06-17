@@ -837,3 +837,149 @@ Click through dashboard, stations, equipment, vehicles, defects, alerts, and inv
 ```bash
 git commit -m "phase-9 frontend dashboard data integration"
 ```
+
+## Phase 10: Elasticsearch Quality Investigation Search
+
+### Video Title:
+
+Build Elasticsearch Search for Manufacturing Quality Investigations
+
+### Goal of This Phase:
+
+Add Elasticsearch indexing and search so engineers can find historical defects, alerts, investigations, and event summaries by VIN, station, equipment, defect code, alert text, investigation text, and free-text descriptions.
+
+Detailed guide: `docs/phase10.md`
+
+### What We Build:
+
+- Backend search package for Elasticsearch client setup, indexing, reindexing, and query service.
+- Search document builders for defects, alerts, investigations, and production event summaries.
+- Reindex command that reads PostgreSQL and writes Elasticsearch documents.
+- Search endpoints for grouped and specialized results.
+- Frontend `/search` route.
+- Sidebar Search link.
+- Search page with input, submit button, loading state, error state, grouped results, and no-results state.
+- Backend tests with mocked Elasticsearch.
+- Frontend tests with mocked API responses.
+
+### Why This Matters for Manufacturing Quality:
+
+Quality engineers need to look across many record types when investigating a recurring issue. A VIN, station code, equipment tag, defect code, or phrase in an alert description may appear in different tables. Elasticsearch gives the project a purpose-built search index while PostgreSQL remains the system of record.
+
+### Code Walkthrough:
+
+1. Confirm the FastAPI backend lives in `backend/`.
+2. Review the existing Elasticsearch service in Docker Compose.
+3. Add the backend Elasticsearch dependency.
+4. Add search document builders for defects, alerts, investigations, and event summaries.
+5. Add a reindex command with `python -m app.search.reindex`.
+6. Add FastAPI search endpoints under `/api/v1/search`.
+7. Add the frontend search API service.
+8. Add `/search` to React Router and Sidebar.
+9. Build the Search page with grouped results.
+10. Confirm no Phase 11 investigation lifecycle or Phase 12 AI summary work is added.
+
+### Testing Walkthrough:
+
+Run backend tests:
+
+```powershell
+cd backend
+pytest
+```
+
+Explain that backend tests use mocked Elasticsearch clients. They verify empty-query validation, grouped response shape, specialized endpoints, document builders, service hit parsing, missing-index behavior, and empty reindex behavior.
+
+Run frontend tests:
+
+```powershell
+cd frontend
+npm install
+npm run test
+```
+
+Explain that frontend tests mock `fetch` and cover page render, search input, submit behavior, loading state, error state, grouped results, no results, and sidebar navigation.
+
+### Manual Demo:
+
+Start services:
+
+```powershell
+docker compose up postgres elasticsearch
+```
+
+If Redpanda and worker are needed for demo data:
+
+```powershell
+docker compose up postgres redpanda redpanda-console elasticsearch
+```
+
+Run backend setup:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+```
+
+Optional demo events:
+
+```powershell
+cd event-generator
+python -m app.main --mode defect-spike --publish --broker localhost:19092
+```
+
+Run reindex:
+
+```powershell
+cd backend
+python -m app.search.reindex
+```
+
+Start API:
+
+```powershell
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Test backend search:
+
+```powershell
+curl "http://localhost:8000/api/v1/search?q=torque"
+curl "http://localhost:8000/api/v1/search/defects?q=torque"
+curl "http://localhost:8000/api/v1/search/alerts?q=defect"
+curl "http://localhost:8000/api/v1/search/investigations?q=root"
+```
+
+Start frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173/search
+```
+
+### Common Errors:
+
+- Elasticsearch container not running: start it with `docker compose up postgres elasticsearch`.
+- Wrong `ELASTICSEARCH_URL`: set it to `http://localhost:9200`.
+- Elasticsearch security enabled accidentally: confirm `xpack.security.enabled=false` in Docker Compose.
+- Index does not exist: run `python -m app.search.reindex`.
+- No search results because reindex was not run: run the reindex command after creating demo data.
+- No search results because database has no demo defects or alerts: seed data and run worker/event-generator demos.
+- Backend CORS issue from frontend search page: confirm `FRONTEND_ORIGIN=http://localhost:5173`.
+- Frontend search error because backend is not running: start the API on port 8000.
+- Search endpoint returns 400 for empty query: submit a non-empty query.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-10 elasticsearch quality investigation search"
+```

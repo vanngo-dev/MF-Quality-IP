@@ -6,6 +6,7 @@ import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { DefectsPage } from "../features/defects/DefectsPage";
 import { EquipmentPage } from "../features/equipment/EquipmentPage";
 import { InvestigationsPage } from "../features/investigations/InvestigationsPage";
+import { SearchPage } from "../features/search/SearchPage";
 import { StationsPage } from "../features/stations/StationsPage";
 import { VehiclesPage } from "../features/vehicles/VehiclesPage";
 
@@ -16,6 +17,7 @@ export const routes = [
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <DashboardPage /> },
+      { path: "search", element: <SearchPage /> },
       { path: "stations", element: <StationsPage /> },
       { path: "equipment", element: <EquipmentPage /> },
       { path: "vehicles", element: <VehiclesPage /> },

@@ -12,7 +12,16 @@ describe("Sidebar", () => {
       </MemoryRouter>,
     );
 
-    for (const label of ["Dashboard", "Stations", "Equipment", "Vehicles", "Defects", "Alerts", "Investigations"]) {
+    for (const label of [
+      "Dashboard",
+      "Search",
+      "Stations",
+      "Equipment",
+      "Vehicles",
+      "Defects",
+      "Alerts",
+      "Investigations",
+    ]) {
       expect(screen.getByRole("link", { name: new RegExp(label, "i") })).toBeInTheDocument();
     }
   });

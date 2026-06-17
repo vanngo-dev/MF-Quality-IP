@@ -137,6 +137,38 @@ Frontend tests verify:
 
 Frontend automated tests mock `fetch`, so they do not require the backend API, PostgreSQL, Redpanda, or the worker to be running.
 
+## Phase 10 Search Coverage
+
+Backend search tests verify:
+
+- Search endpoint rejects an empty query with `400`.
+- Grouped search returns `defects`, `alerts`, `investigations`, and `events`.
+- Defects search returns a matching defect result.
+- Alerts search returns a matching alert result.
+- Investigations search returns a matching investigation result.
+- No results return empty groups.
+- Search service builds Elasticsearch multi-match queries.
+- Search service parses Elasticsearch hits into stable API results.
+- Missing Elasticsearch indexes return empty result lists.
+- Indexer builds valid defect documents.
+- Indexer builds valid alert documents.
+- Indexer builds valid investigation documents.
+- Indexer builds valid event summary documents.
+- Reindex command handles an empty database.
+
+Frontend search tests verify:
+
+- Search page renders.
+- Search input accepts text.
+- Submitting search calls the backend API client.
+- Loading state appears while search is pending.
+- Error state appears when search fails.
+- Grouped results render.
+- No results message renders.
+- Sidebar includes the Search link.
+
+Normal automated tests use mocked Elasticsearch and mocked frontend `fetch`. They do not require a live Elasticsearch container.
+
 ## Local Test Command
 
 Backend:
@@ -438,3 +470,74 @@ Expected results:
 The backend must be running for the Phase 9 browser demo. The frontend automated tests still mock API responses.
 
 See `docs/phase9.md` for the dedicated Phase 9 guide.
+
+## Search Manual Verification
+
+Start services:
+
+```powershell
+docker compose up postgres elasticsearch
+```
+
+If using streamed demo data:
+
+```powershell
+docker compose up postgres redpanda redpanda-console elasticsearch
+```
+
+Run backend setup:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+```
+
+Run reindex:
+
+```powershell
+python -m app.search.reindex
+```
+
+Start the API:
+
+```powershell
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Test backend search:
+
+```powershell
+curl "http://localhost:8000/api/v1/search?q=torque"
+curl "http://localhost:8000/api/v1/search/defects?q=torque"
+curl "http://localhost:8000/api/v1/search/alerts?q=defect"
+curl "http://localhost:8000/api/v1/search/investigations?q=root"
+```
+
+Start the frontend:
+
+```powershell
+cd frontend
+npm install
+npm run test
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173/search
+```
+
+Expected results:
+
+- Elasticsearch starts on port 9200.
+- Reindex command prints counts for defects, alerts, investigations, and events.
+- Search endpoints return grouped or specialized results.
+- Search page loads.
+- Search input works.
+- No results message appears for a nonsense query.
+- Error state appears if backend or Elasticsearch is stopped.
+
+See `docs/phase10.md` for the dedicated Phase 10 guide.

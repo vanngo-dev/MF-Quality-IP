@@ -99,6 +99,69 @@ export const apiFixtures = {
       closed_at: null,
     },
   ],
+  search: {
+    query: "torque",
+    results: {
+      defects: [
+        {
+          id: "1",
+          type: "defect",
+          title: "TORQUE_LOW",
+          summary: "Torque value below threshold",
+          score: 3.5,
+          source: {
+            id: 1,
+            vin: "MQPLANT0000000001",
+            station_code: "ST-TORQUE",
+            equipment_code: "EQ-TQ-01",
+            status: "open",
+          },
+        },
+      ],
+      alerts: [
+        {
+          id: "2",
+          type: "alert",
+          title: "Repeated torque defects",
+          summary: "Multiple torque defects detected at the station",
+          score: 2.5,
+          source: {
+            id: 2,
+            station_code: "ST-TORQUE",
+            equipment_code: "EQ-TQ-01",
+            status: "open",
+          },
+        },
+      ],
+      investigations: [
+        {
+          id: "3",
+          type: "investigation",
+          title: "Investigate repeated torque defects",
+          summary: "Torque tool may be drifting out of calibration",
+          score: 1.5,
+          source: {
+            id: 3,
+            status: "draft",
+          },
+        },
+      ],
+      events: [
+        {
+          id: "4",
+          type: "event",
+          title: "station_exit",
+          summary: "ST-TORQUE",
+          score: 1,
+          source: {
+            id: 4,
+            vin: "MQPLANT0000000001",
+            station_code: "ST-TORQUE",
+          },
+        },
+      ],
+    },
+  },
 };
 
 type ApiResponseMap = Record<string, unknown>;
@@ -115,6 +178,11 @@ export function createApiResponseMap(overrides: ApiResponseMap = {}): ApiRespons
     "GET /api/v1/alerts": apiFixtures.alerts,
     "PATCH /api/v1/alerts/1/status": { ...apiFixtures.alerts[0], status: "acknowledged" },
     "GET /api/v1/investigations": apiFixtures.investigations,
+    "GET /api/v1/search": apiFixtures.search,
+    "GET /api/v1/search/defects": { query: "torque", results: apiFixtures.search.results.defects },
+    "GET /api/v1/search/alerts": { query: "torque", results: apiFixtures.search.results.alerts },
+    "GET /api/v1/search/investigations": { query: "torque", results: apiFixtures.search.results.investigations },
+    "GET /api/v1/search/events": { query: "torque", results: apiFixtures.search.results.events },
     ...overrides,
   };
 }

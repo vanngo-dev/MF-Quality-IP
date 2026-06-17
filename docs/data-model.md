@@ -109,6 +109,53 @@ This simple prevention keeps repeated polling, Redpanda redelivery, or repeated 
 
 Phase 7 adds deterministic alert generation only. Frontend dashboards start in Phase 8. AI summaries and machine learning are intentionally not part of this phase.
 
+## Phase 10 Search Documents
+
+Phase 10 does not add new relational tables. PostgreSQL remains the system of record, while Elasticsearch stores denormalized search documents for fast free-text lookup.
+
+An Elasticsearch index is a searchable collection of documents. A search document is a JSON representation of a database record plus useful lookup fields from related records, such as VIN, station code, and equipment code.
+
+Indexes:
+
+| Index | Source |
+| --- | --- |
+| `manufacturing-defects` | `defects` rows enriched with vehicle, station, and equipment fields. |
+| `manufacturing-alerts` | `quality_alerts` rows enriched with station and equipment fields. |
+| `manufacturing-investigations` | `investigations` rows with investigation text fields. |
+| `manufacturing-events` | `production_events` rows enriched with vehicle and station fields. |
+
+Defect search documents include:
+
+- `id`
+- `defect_code`
+- `vehicle_id`
+- `vin`
+- `station_id`
+- `station_code`
+- `equipment_id`
+- `equipment_code`
+- `severity`
+- `status`
+- `description`
+- `detected_at`
+- `created_at`
+- `type = defect`
+
+Alert search documents include alert code, station and equipment references, severity, status, title, description, evidence JSON, creation time, and `type = alert`.
+
+Investigation search documents include alert ID, title, summary, root-cause hypothesis, status, created/opened time, updated time, `ai_summary` set to `null` until Phase 12, and `type = investigation`.
+
+Event summary documents include event ID, event type, vehicle and station references, payload JSON, event timestamp, and `type = event`.
+
+Reindexing rebuilds these documents from PostgreSQL:
+
+```powershell
+cd backend
+python -m app.search.reindex
+```
+
+Advanced filters are intentionally deferred. The full investigation lifecycle workflow starts in Phase 11, and AI summaries start in Phase 12.
+
 ## Seed Data
 
 The seed command creates a small demo plant:

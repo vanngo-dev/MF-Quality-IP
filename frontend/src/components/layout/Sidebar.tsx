@@ -4,6 +4,7 @@ import {
   Gauge,
   MapPin,
   SearchCheck,
+  Search,
   Settings,
   Truck,
 } from "lucide-react";
@@ -11,6 +12,7 @@ import { NavLink } from "react-router-dom";
 
 const navigationItems = [
   { to: "/dashboard", label: "Dashboard", icon: Gauge },
+  { to: "/search", label: "Search", icon: Search },
   { to: "/stations", label: "Stations", icon: MapPin },
   { to: "/equipment", label: "Equipment", icon: Settings },
   { to: "/vehicles", label: "Vehicles", icon: Truck },

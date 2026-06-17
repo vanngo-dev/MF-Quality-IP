@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 9 connects the React frontend dashboard to live FastAPI backend data:
+Phase 10 adds Elasticsearch quality investigation search on top of the Phase 1-9 platform:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend dashboard connected to live API data with TanStack Query.
@@ -33,6 +33,10 @@ Phase 9 connects the React frontend dashboard to live FastAPI backend data:
 - VIN search and selected vehicle details.
 - Client-side defect and alert filters.
 - Alert acknowledgement through `PATCH /api/v1/alerts/{id}/status`.
+- Elasticsearch search indexes for defects, alerts, investigations, and event summaries.
+- Backend search endpoints for grouped and specialized search results.
+- Reindex command for rebuilding search documents from PostgreSQL.
+- Frontend `/search` page with grouped results for defects, alerts, investigations, and events.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -48,6 +52,7 @@ Detailed notes:
 - `docs/phase7.md`
 - `docs/phase8.md`
 - `docs/phase9.md`
+- `docs/phase10.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
 - `docs/data-model.md`
@@ -96,6 +101,7 @@ Backend API:
 - Defects: http://localhost:8000/api/v1/defects
 - Alerts: http://localhost:8000/api/v1/alerts
 - Investigations: http://localhost:8000/api/v1/investigations
+- Search: http://localhost:8000/api/v1/search?q=torque
 
 ## Frontend
 
@@ -110,7 +116,7 @@ Frontend app:
 
 - http://localhost:5173
 
-Phase 9 uses live backend API data. Start the backend on port 8000 for the browser demo. Frontend tests mock API responses, so the backend does not need to be running for automated frontend tests.
+Phase 10 uses live backend API data and search endpoints. Start the backend on port 8000 for the browser demo. Frontend tests mock API responses, so the backend does not need to be running for automated frontend tests.
 
 ## Local Services
 
@@ -138,7 +144,7 @@ python -m app.db.seed
 If editable install is not available in your environment, install the backend dependencies directly:
 
 ```powershell
-pip install fastapi "uvicorn[standard]" pytest httpx pydantic-settings sqlalchemy alembic psycopg2-binary
+pip install fastapi "uvicorn[standard]" pytest httpx pydantic-settings sqlalchemy alembic psycopg2-binary elasticsearch
 ```
 
 The seed command creates:
@@ -357,7 +363,7 @@ curl http://localhost:8000/api/v1/alerts
 docker compose exec redpanda rpk topic consume quality.alerts --num 5
 ```
 
-Phase 9 connects the frontend shell to live backend data. Elasticsearch search starts in Phase 10.
+Phase 10 adds Elasticsearch search for indexed quality records.
 
 ## Frontend Dashboard Data Integration
 
@@ -366,6 +372,7 @@ Phase 9 turns the frontend shell into a live internal dashboard. Pages call the 
 Routes:
 
 - `/dashboard`
+- `/search`
 - `/stations`
 - `/equipment`
 - `/vehicles`
@@ -384,6 +391,7 @@ VITE_API_BASE_URL=http://localhost:8000
 Connected pages:
 
 - Dashboard live metrics and latest alerts
+- Search grouped results
 - Stations with defect and alert counts
 - Equipment inventory
 - Vehicles with VIN search and selected vehicle details
@@ -391,4 +399,52 @@ Connected pages:
 - Alerts with severity and status filters plus acknowledgement
 - Investigations worklist
 
-Sensor event detail history is not exposed by the backend API yet, so the dashboard shows `Not available yet` for latest sensor event timestamp and the vehicle page keeps the station event history placeholder. Search is intentionally not included until Phase 10, and the full investigation detail workflow is intentionally not included until Phase 11.
+Sensor event detail history is not exposed by the backend API yet, so the dashboard shows `Not available yet` for latest sensor event timestamp and the vehicle page keeps the station event history placeholder. The full investigation detail workflow is intentionally not included until Phase 11.
+
+## Elasticsearch Quality Search
+
+Phase 10 indexes searchable documents into Elasticsearch:
+
+| Index | Records |
+| --- | --- |
+| `manufacturing-defects` | defects |
+| `manufacturing-alerts` | quality alerts |
+| `manufacturing-investigations` | investigations |
+| `manufacturing-events` | production event summaries |
+
+The backend reads:
+
+```text
+ELASTICSEARCH_URL=http://localhost:9200
+```
+
+Rebuild search indexes from PostgreSQL:
+
+```powershell
+cd backend
+python -m app.search.reindex
+```
+
+Makefile shortcut:
+
+```powershell
+make reindex-search
+```
+
+Search endpoints:
+
+```text
+GET /api/v1/search?q=torque
+GET /api/v1/search/defects?q=torque
+GET /api/v1/search/alerts?q=defect
+GET /api/v1/search/investigations?q=root
+GET /api/v1/search/events?q=station
+```
+
+Frontend route:
+
+```text
+http://localhost:5173/search
+```
+
+Advanced search filters are deferred. The full investigation lifecycle workflow starts in Phase 11, and AI summaries start in Phase 12.
