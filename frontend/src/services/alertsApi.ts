@@ -1,4 +1,4 @@
-import { apiGet } from "./apiClient";
+import { apiGet, apiPatch } from "./apiClient";
 
 export type Alert = {
   id: number;
@@ -8,7 +8,7 @@ export type Alert = {
   severity: string;
   title: string;
   description: string;
-  evidence_json: Record<string, object>;
+  evidence_json: Record<string, unknown>;
   status: string;
   created_at: string;
 };
@@ -16,3 +16,13 @@ export type Alert = {
 export function listAlerts() {
   return apiGet<Alert[]>("/api/v1/alerts");
 }
+
+export function getAlertById(id: number) {
+  return apiGet<Alert>(`/api/v1/alerts/${id}`);
+}
+
+export function updateAlertStatus(id: number, status: string) {
+  return apiPatch<Alert, { status: string }>(`/api/v1/alerts/${id}/status`, { status });
+}
+
+export const getAlerts = listAlerts;

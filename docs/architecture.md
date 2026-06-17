@@ -130,10 +130,40 @@ This separation keeps UI routing, layout, browser state, and component tests ind
 
 React Router provides internal routes for dashboard, stations, equipment, vehicles, defects, alerts, and investigations. Reusable components keep page headers, stat cards, tables, status badges, severity badges, loading states, and error states consistent across the application.
 
-TanStack Query is configured as the server-state foundation for Phase 9, when the mock page data will be replaced with live backend API responses.
+TanStack Query is configured as the server-state foundation for Phase 9, when the mock page data is replaced with live backend API responses.
 
 See `docs/phase8.md` for the Phase 8 runbook and troubleshooting guide.
 
 ## Phase 8 Boundary
 
-Phase 8 does not integrate live backend data, add Elasticsearch UI, add AI summaries, or add end-to-end browser tests. Live backend data integration starts in Phase 9.
+Phase 8 does not integrate live backend data, add Elasticsearch UI, add AI summaries, or add end-to-end browser tests. Live backend data integration is handled in Phase 9.
+
+## Phase 9 Dashboard Data Integration
+
+Phase 9 connects the existing React routes to the FastAPI backend:
+
+```text
+frontend pages -> TanStack Query hooks -> API service functions -> FastAPI backend -> PostgreSQL
+```
+
+The frontend uses `VITE_API_BASE_URL` to choose the backend origin. For local development the value is:
+
+```text
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Each page owns its server-state queries and uses the shared loading and error components from Phase 8. Dashboard metrics are calculated client-side from the backend lists: total vehicles, open defects, open alerts, critical alerts, and the station with the most defects. The latest sensor event timestamp is shown as `Not available yet` because a sensor event detail API is not exposed yet.
+
+The alert queue uses a TanStack Query mutation for:
+
+```text
+PATCH /api/v1/alerts/{id}/status
+```
+
+After an alert is acknowledged, the alerts query is invalidated so the table refetches from the backend.
+
+Investigations remain a worklist table in Phase 9. The full investigation detail workflow is intentionally deferred until Phase 11.
+
+## Phase 9 Boundary
+
+Phase 9 connects dashboard pages to live backend data. It does not add Elasticsearch search, search UI, AI summaries, or the full investigation detail workflow. Elasticsearch search starts in Phase 10.

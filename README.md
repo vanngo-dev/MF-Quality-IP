@@ -4,10 +4,10 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 8 adds the React frontend foundation on top of the Phase 1-7 platform:
+Phase 9 connects the React frontend dashboard to live FastAPI backend data:
 
 - FastAPI backend with a health contract.
-- React + TypeScript + Vite frontend dashboard shell.
+- React + TypeScript + Vite frontend dashboard connected to live API data with TanStack Query.
 - PostgreSQL, Redpanda, and Elasticsearch local services through Docker Compose.
 - SQLAlchemy ORM models for plants, production lines, stations, equipment, vehicles, events, readings, defects, alerts, and investigations.
 - Alembic migration for the initial domain schema.
@@ -27,7 +27,12 @@ Phase 8 adds the React frontend foundation on top of the Phase 1-7 platform:
 - Alert publishing to the `quality.alerts` Redpanda topic.
 - React Router routes for dashboard, stations, equipment, vehicles, defects, alerts, and investigations.
 - Reusable frontend layout and UI components.
-- API client foundation prepared for Phase 9 live data integration.
+- API client functions for health, stations, equipment, vehicles, defects, alerts, and investigations.
+- Live dashboard metrics for vehicles, open defects, open alerts, critical alerts, and top defect station.
+- Frontend tables for stations, equipment, vehicles, defects, alerts, and investigations populated from backend APIs.
+- VIN search and selected vehicle details.
+- Client-side defect and alert filters.
+- Alert acknowledgement through `PATCH /api/v1/alerts/{id}/status`.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -42,6 +47,7 @@ Detailed notes:
 - `docs/phase6.md`
 - `docs/phase7.md`
 - `docs/phase8.md`
+- `docs/phase9.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
 - `docs/data-model.md`
@@ -104,7 +110,7 @@ Frontend app:
 
 - http://localhost:5173
 
-Phase 8 uses mock/static frontend data. The backend does not need to be running for the frontend shell or tests.
+Phase 9 uses live backend API data. Start the backend on port 8000 for the browser demo. Frontend tests mock API responses, so the backend does not need to be running for automated frontend tests.
 
 ## Local Services
 
@@ -351,11 +357,11 @@ curl http://localhost:8000/api/v1/alerts
 docker compose exec redpanda rpk topic consume quality.alerts --num 5
 ```
 
-Phase 8 adds the frontend shell; live backend data integration starts in Phase 9.
+Phase 9 connects the frontend shell to live backend data. Elasticsearch search starts in Phase 10.
 
-## Frontend Dashboard Foundation
+## Frontend Dashboard Data Integration
 
-Phase 8 adds an internal engineering dashboard shell with sidebar navigation, routed pages, reusable UI components, and API service files prepared for Phase 9.
+Phase 9 turns the frontend shell into a live internal dashboard. Pages call the FastAPI backend through `VITE_API_BASE_URL` and TanStack Query manages loading, error, success, refetch, and mutation states.
 
 Routes:
 
@@ -375,4 +381,14 @@ The API base URL is configured with:
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-Phase 9 will connect these pages to live backend data through TanStack Query.
+Connected pages:
+
+- Dashboard live metrics and latest alerts
+- Stations with defect and alert counts
+- Equipment inventory
+- Vehicles with VIN search and selected vehicle details
+- Defects with severity and status filters
+- Alerts with severity and status filters plus acknowledgement
+- Investigations worklist
+
+Sensor event detail history is not exposed by the backend API yet, so the dashboard shows `Not available yet` for latest sensor event timestamp and the vehicle page keeps the station event history placeholder. Search is intentionally not included until Phase 10, and the full investigation detail workflow is intentionally not included until Phase 11.

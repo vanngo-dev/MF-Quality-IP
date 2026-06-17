@@ -111,7 +111,31 @@ Frontend tests verify:
 - Error state renders.
 - API client uses the configured base URL or default base URL.
 
-Phase 8 tests do not require the backend API to be running because pages use mock/static data. Live data testing starts in Phase 9.
+Phase 8 tests do not require the backend API to be running because pages use mock/static data. Phase 9 replaces those placeholders with mocked live API responses in frontend tests.
+
+## Phase 9 Frontend Data Integration Coverage
+
+Frontend tests verify:
+
+- API client functions build the correct backend URLs.
+- Alert status updates call `PATCH /api/v1/alerts/{id}/status` with `status = acknowledged`.
+- Dashboard renders loading state.
+- Dashboard renders error state.
+- Dashboard calculates live stats from mocked API responses.
+- Stations page renders station rows from mocked API data.
+- Equipment page renders equipment rows from mocked API data.
+- Vehicles page renders the vehicle list.
+- VIN search fetches and displays selected vehicle details.
+- Defects page renders defect rows from mocked API data.
+- Defects page filters by severity.
+- Defects page filters by status.
+- Alerts page renders alert rows from mocked API data.
+- Alerts page filters by severity.
+- Alerts page filters by status.
+- Alert acknowledgement uses a TanStack Query mutation.
+- Investigations page renders investigation rows from mocked API data.
+
+Frontend automated tests mock `fetch`, so they do not require the backend API, PostgreSQL, Redpanda, or the worker to be running.
 
 ## Local Test Command
 
@@ -344,7 +368,39 @@ See `docs/phase7.md` for the dedicated Phase 7 guide.
 
 ## Frontend Manual Verification
 
-Phase 8 manual verification:
+Phase 9 manual verification:
+
+```powershell
+docker compose up postgres redpanda redpanda-console
+```
+
+Run migrations and seed data:
+
+```powershell
+cd backend
+alembic upgrade head
+python -m app.db.seed
+```
+
+Start the backend API:
+
+```powershell
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Optionally start the worker and produce demo alerts:
+
+```powershell
+cd worker
+python -m app.main
+```
+
+```powershell
+cd event-generator
+python -m app.main --mode defect-spike --publish --broker localhost:19092
+```
+
+Start the frontend:
 
 ```powershell
 cd frontend
@@ -364,11 +420,21 @@ Expected results:
 - Dashboard page loads.
 - Sidebar appears.
 - Navigation links work.
-- Each route loads without crashing.
-- Status badges display workflow statuses.
-- Severity badges display severity levels.
+- Dashboard displays live backend metrics.
+- Stations page loads real station data.
+- Equipment page loads real equipment data.
+- Vehicles page loads real vehicle data.
+- VIN search works.
+- Defects page loads real defect data.
+- Defect filters work.
+- Alerts page loads real alert data.
+- Alert filters work.
+- Acknowledge alert updates alert status.
+- Investigations page loads real investigation data.
+- Loading states appear while API calls are pending.
+- Error states appear if the backend is stopped.
 - No browser console errors.
 
-The backend does not need to be running for the Phase 8 frontend demo.
+The backend must be running for the Phase 9 browser demo. The frontend automated tests still mock API responses.
 
-See `docs/phase8.md` for the dedicated Phase 8 guide.
+See `docs/phase9.md` for the dedicated Phase 9 guide.

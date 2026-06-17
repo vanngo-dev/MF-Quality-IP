@@ -11,3 +11,5 @@ export type Equipment = {
 export function listEquipment() {
   return apiGet<Equipment[]>("/api/v1/equipment");
 }
+
+export const getEquipment = listEquipment;

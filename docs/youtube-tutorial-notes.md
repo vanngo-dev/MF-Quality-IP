@@ -696,3 +696,144 @@ Click:
 ```bash
 git commit -m "phase-8 react frontend foundation"
 ```
+
+## Phase 9: Frontend Dashboard Data Integration
+
+### Video Title:
+
+Connect a React Manufacturing Dashboard to Live FastAPI Data
+
+### Goal of This Phase:
+
+Turn the Phase 8 frontend shell into a working internal dashboard that reads live manufacturing quality data from the FastAPI backend.
+
+Detailed guide: `docs/phase9.md`
+
+### What We Build:
+
+- TanStack Query calls for dashboard metrics and routed pages.
+- API client functions for health, stations, equipment, vehicles, defects, alerts, and investigations.
+- Live dashboard cards for vehicles, open defects, open alerts, critical alerts, top defect station, and latest sensor event availability.
+- Stations and equipment tables populated from backend API data.
+- Vehicles page with VIN search, selected vehicle details, selected vehicle defects, and current station.
+- Defects page with severity and status filters.
+- Alerts page with severity and status filters plus an acknowledge mutation.
+- Investigations table using the backend investigation worklist.
+- Frontend tests with mocked API responses.
+
+### Why This Matters for Manufacturing Quality:
+
+Quality teams need the dashboard to reflect the current plant state, not static placeholders. Phase 9 connects the user interface to the backend system of record so station counts, vehicle context, defects, alerts, and investigations can be reviewed in one place.
+
+TanStack Query keeps server state predictable by handling loading, error, success, refetch, and mutation flows. That gives the app a clean foundation before search and deeper investigation workflows are added later.
+
+### Code Walkthrough:
+
+1. Confirm the FastAPI backend lives in `backend/`.
+2. Review the Phase 8 React Router routes and reusable components.
+3. Update the API client around `VITE_API_BASE_URL`.
+4. Add service functions for the backend routes.
+5. Replace placeholder page data with TanStack Query calls.
+6. Explain dashboard metric calculations from vehicles, defects, alerts, and stations.
+7. Add defect and alert filters.
+8. Add the alert acknowledge mutation and query invalidation.
+9. Explain why Elasticsearch search waits until Phase 10.
+10. Explain why the full investigation detail workflow waits until Phase 11.
+
+### Testing Walkthrough:
+
+Run:
+
+```powershell
+cd frontend
+npm install
+npm run test
+```
+
+Explain that frontend tests mock `fetch`, so the backend does not need to be running for automated checks. Show tests for API URLs, dashboard loading and error states, live stat calculations, page tables, filters, VIN search, alert acknowledgement, and investigations.
+
+Run existing backend, worker, and event-generator tests when validating the full repo:
+
+```powershell
+cd backend
+pytest
+```
+
+```powershell
+cd worker
+pytest
+```
+
+```powershell
+cd event-generator
+pytest
+```
+
+### Manual Demo:
+
+Start services:
+
+```powershell
+docker compose up postgres redpanda redpanda-console
+```
+
+Run migrations and seed:
+
+```powershell
+cd backend
+alembic upgrade head
+python -m app.db.seed
+```
+
+Start backend API:
+
+```powershell
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Optional demo data flow:
+
+```powershell
+cd worker
+python -m app.main
+```
+
+```powershell
+cd event-generator
+python -m app.main --mode defect-spike --publish --broker localhost:19092
+```
+
+Start frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+Click through dashboard, stations, equipment, vehicles, defects, alerts, and investigations. Acknowledge an open alert and confirm the table refreshes.
+
+### Common Errors:
+
+- Frontend cannot connect to backend: confirm the backend is running on port 8000.
+- Wrong `VITE_API_BASE_URL`: set it to `http://localhost:8000`.
+- Backend not running: start `python -m uvicorn app.main:app --reload --port 8000` from `backend/`.
+- CORS error: confirm the backend allows `http://localhost:5173`.
+- Database not seeded: run `alembic upgrade head` and `python -m app.db.seed` from `backend/`.
+- No defects or alerts visible because worker/event generator has not run: start the worker and publish defect-spike demo events.
+- Alert acknowledge fails because PATCH endpoint is missing or wrong: confirm `PATCH /api/v1/alerts/{id}/status` exists.
+- React Query cache not refreshing after mutation: invalidate the `alerts` query after acknowledgement.
+- Port 5173 already in use: run `npm run dev -- --port 5174`.
+- Port 8000 already in use: stop the existing backend process or choose a different backend port and update `VITE_API_BASE_URL`.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-9 frontend dashboard data integration"
+```

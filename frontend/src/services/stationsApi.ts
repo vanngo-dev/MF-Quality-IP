@@ -11,3 +11,5 @@ export type Station = {
 export function listStations() {
   return apiGet<Station[]>("/api/v1/stations");
 }
+
+export const getStations = listStations;

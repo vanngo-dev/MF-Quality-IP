@@ -1,26 +1,45 @@
+import { useQuery } from "@tanstack/react-query";
+
 import { PageHeader } from "../../components/layout/PageHeader";
 import { DataTable } from "../../components/ui/DataTable";
-
-const rows = [
-  { asset: "EQ-A-ROBOT-01", name: "Body Weld Robot A1", type: "robot", station: "A-BODY" },
-  { asset: "EQ-A-TORQUE-02", name: "Door Torque Tool A2", type: "torque_tool", station: "A-BODY" },
-  { asset: "EQ-A-VISION-03", name: "Paint Vision Camera A3", type: "vision_system", station: "A-PAINT" },
-];
+import { ErrorState } from "../../components/ui/ErrorState";
+import { LoadingState } from "../../components/ui/LoadingState";
+import { StatusBadge } from "../../components/ui/StatusBadge";
+import { getEquipment } from "../../services/equipmentApi";
+import { getStations } from "../../services/stationsApi";
 
 export function EquipmentPage() {
+  const equipmentQuery = useQuery({ queryKey: ["equipment"], queryFn: getEquipment });
+  const stationsQuery = useQuery({ queryKey: ["stations"], queryFn: getStations });
+
+  if (equipmentQuery.isLoading || stationsQuery.isLoading) {
+    return <LoadingState message="Loading equipment..." />;
+  }
+
+  if (equipmentQuery.isError || stationsQuery.isError) {
+    return <ErrorState message="Unable to load equipment data from the backend API." />;
+  }
+
+  const stations = stationsQuery.data ?? [];
+
   return (
     <section className="page-stack">
-      <PageHeader title="Equipment" description="Placeholder equipment inventory for the dashboard foundation." />
+      <PageHeader title="Equipment" description="Live equipment inventory from the backend API." />
       <DataTable
-        caption="Mock equipment"
+        caption="Equipment"
         columns={[
-          { key: "asset", header: "Asset Tag", render: (row) => row.asset },
+          { key: "asset", header: "Equipment Code", render: (row) => row.asset_tag },
           { key: "name", header: "Name", render: (row) => row.name },
-          { key: "type", header: "Type", render: (row) => row.type },
-          { key: "station", header: "Station", render: (row) => row.station },
+          { key: "type", header: "Type", render: (row) => row.equipment_type },
+          { key: "station", header: "Station", render: (row) => stationLabel(row.station_id, stations) },
+          { key: "status", header: "Status", render: () => <StatusBadge status="active" /> },
         ]}
-        rows={rows}
+        rows={equipmentQuery.data ?? []}
       />
     </section>
   );
+}
+
+function stationLabel(stationId: number, stations: { id: number; code: string }[]) {
+  return stations.find((station) => station.id === stationId)?.code ?? `Station ${stationId}`;
 }

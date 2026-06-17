@@ -51,6 +51,36 @@ Alert statuses: `open`, `acknowledged`, `investigating`, `resolved`.
 
 Investigation statuses: `draft`, `active`, `waiting_on_data`, `resolved`.
 
+## Phase 9 Frontend API Usage
+
+The React frontend uses `VITE_API_BASE_URL` to call the FastAPI backend from the browser:
+
+```text
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Frontend service functions map to these contracts:
+
+| Frontend function | Backend endpoint |
+| --- | --- |
+| `getHealth` | `GET /health` |
+| `getStations` | `GET /api/v1/stations` |
+| `getEquipment` | `GET /api/v1/equipment` |
+| `getVehicles` | `GET /api/v1/vehicles` |
+| `getVehicleByVin` | `GET /api/v1/vehicles/{vin}` |
+| `getDefects` | `GET /api/v1/defects` |
+| `getDefectById` | `GET /api/v1/defects/{id}` |
+| `getAlerts` | `GET /api/v1/alerts` |
+| `getAlertById` | `GET /api/v1/alerts/{id}` |
+| `updateAlertStatus` | `PATCH /api/v1/alerts/{id}/status` |
+| `getInvestigations` | `GET /api/v1/investigations` |
+| `createInvestigation` | `POST /api/v1/investigations` |
+| `updateInvestigation` | `PATCH /api/v1/investigations/{id}` |
+
+The investigations API returns `opened_at` and `updated_at`. Phase 9 displays `opened_at` as the created/opened timestamp because the backend does not expose a separate `created_at` field for investigations.
+
+The frontend does not call Elasticsearch or search endpoints in Phase 9. Search starts in Phase 10.
+
 ## Example Manual Checks
 
 ```powershell

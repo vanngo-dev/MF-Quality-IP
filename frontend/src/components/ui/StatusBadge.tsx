@@ -9,7 +9,7 @@ export type StatusValue =
   | "waiting_on_data";
 
 type StatusBadgeProps = {
-  status: StatusValue;
+  status: StatusValue | string;
 };
 
 const statusLabels: Record<StatusValue, string> = {
@@ -24,5 +24,14 @@ const statusLabels: Record<StatusValue, string> = {
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  return <span className={`badge status-${status}`}>{statusLabels[status]}</span>;
+  const label = status in statusLabels ? statusLabels[status as StatusValue] : formatLabel(status);
+
+  return <span className={`badge status-${status}`}>{label}</span>;
+}
+
+function formatLabel(value: string) {
+  return value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }

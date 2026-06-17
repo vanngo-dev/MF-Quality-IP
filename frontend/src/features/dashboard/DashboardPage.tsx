@@ -1,55 +1,107 @@
+import { useQuery } from "@tanstack/react-query";
+
 import { PageHeader } from "../../components/layout/PageHeader";
 import { DataTable } from "../../components/ui/DataTable";
+import { ErrorState } from "../../components/ui/ErrorState";
+import { LoadingState } from "../../components/ui/LoadingState";
 import { SeverityBadge } from "../../components/ui/SeverityBadge";
 import { StatCard } from "../../components/ui/StatCard";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-
-const stats = [
-  { title: "Total Vehicles", value: "10", description: "Seeded vehicles tracked across active lines" },
-  { title: "Open Defects", value: "3", description: "Mock queue for Phase 8 frontend shell" },
-  { title: "Open Alerts", value: "2", description: "Rule-based alerts prepared for Phase 9 data" },
-  { title: "Critical Alerts", value: "1", description: "Highest severity items needing review" },
-];
-
-const alertRows = [
-  {
-    code: "REPEATED_DEFECT_STATION",
-    station: "A-BODY",
-    severity: "high" as const,
-    status: "open" as const,
-  },
-  {
-    code: "TORQUE_OUT_OF_TOLERANCE",
-    station: "A-BODY",
-    severity: "critical" as const,
-    status: "acknowledged" as const,
-  },
-];
+import { getAlerts } from "../../services/alertsApi";
+import { getDefects } from "../../services/defectsApi";
+import { getStations } from "../../services/stationsApi";
+import { getVehicles } from "../../services/vehiclesApi";
 
 export function DashboardPage() {
+  const vehiclesQuery = useQuery({ queryKey: ["vehicles"], queryFn: getVehicles });
+  const defectsQuery = useQuery({ queryKey: ["defects"], queryFn: getDefects });
+  const alertsQuery = useQuery({ queryKey: ["alerts"], queryFn: getAlerts });
+  const stationsQuery = useQuery({ queryKey: ["stations"], queryFn: getStations });
+
+  const isLoading = vehiclesQuery.isLoading || defectsQuery.isLoading || alertsQuery.isLoading || stationsQuery.isLoading;
+  const isError = vehiclesQuery.isError || defectsQuery.isError || alertsQuery.isError || stationsQuery.isError;
+
+  if (isLoading) {
+    return <LoadingState message="Loading dashboard metrics..." />;
+  }
+
+  if (isError) {
+    return <ErrorState message="Unable to load dashboard data from the backend API." />;
+  }
+
+  const vehicles = vehiclesQuery.data ?? [];
+  const defects = defectsQuery.data ?? [];
+  const alerts = alertsQuery.data ?? [];
+  const stations = stationsQuery.data ?? [];
+  const openDefects = defects.filter((defect) => defect.status === "open");
+  const openAlerts = alerts.filter((alert) => alert.status === "open");
+  const criticalAlerts = alerts.filter((alert) => alert.severity === "critical");
+  const topDefectStation = findTopDefectStation(defects, stations);
+  const recentAlerts = alerts.slice(0, 5);
+
   return (
     <section className="page-stack">
       <PageHeader
         title="Dashboard"
-        description="Operational summary shell for manufacturing quality signals. Phase 8 uses mock data only."
+        description="Live manufacturing quality summary from the FastAPI backend."
       />
 
+      <div className="action-row">
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={() => {
+            void vehiclesQuery.refetch();
+            void defectsQuery.refetch();
+            void alertsQuery.refetch();
+            void stationsQuery.refetch();
+          }}
+        >
+          Refresh Data
+        </button>
+      </div>
+
       <div className="stat-grid">
-        {stats.map((stat) => (
-          <StatCard key={stat.title} title={stat.title} value={stat.value} description={stat.description} />
-        ))}
+        <StatCard title="Total Vehicles" value={String(vehicles.length)} description="Vehicles returned by the backend" />
+        <StatCard title="Open Defects" value={String(openDefects.length)} description="Defects with open status" />
+        <StatCard title="Open Alerts" value={String(openAlerts.length)} description="Alerts requiring quality review" />
+        <StatCard title="Critical Alerts" value={String(criticalAlerts.length)} description="Critical severity alert count" />
+        <StatCard title="Top Defect Station" value={topDefectStation} description="Calculated from live defect rows" />
+        <StatCard title="Latest Sensor Event" value="Not available yet" description="Sensor detail API is not exposed yet" />
       </div>
 
       <DataTable
-        caption="Mock alert queue"
+        caption="Latest alerts"
         columns={[
-          { key: "code", header: "Alert Code", render: (row) => row.code },
-          { key: "station", header: "Station", render: (row) => row.station },
+          { key: "code", header: "Alert Code", render: (row) => row.alert_code },
+          { key: "title", header: "Title", render: (row) => row.title },
+          { key: "station", header: "Station", render: (row) => stationLabel(row.station_id, stations) },
           { key: "severity", header: "Severity", render: (row) => <SeverityBadge severity={row.severity} /> },
           { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
         ]}
-        rows={alertRows}
+        rows={recentAlerts}
       />
     </section>
   );
+}
+
+function findTopDefectStation(
+  defects: { station_id: number }[],
+  stations: { id: number; code: string }[],
+) {
+  if (defects.length === 0) {
+    return "None";
+  }
+
+  const counts = defects.reduce<Record<number, number>>((accumulator, defect) => {
+    accumulator[defect.station_id] = (accumulator[defect.station_id] ?? 0) + 1;
+    return accumulator;
+  }, {});
+  const [stationId] = Object.entries(counts).sort(([, left], [, right]) => right - left)[0];
+
+  return stationLabel(Number(stationId), stations);
+}
+
+function stationLabel(stationId: number, stations: { id: number; code: string }[]) {
+  return stations.find((station) => station.id === stationId)?.code ?? `Station ${stationId}`;
 }

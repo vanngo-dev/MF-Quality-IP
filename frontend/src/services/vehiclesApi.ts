@@ -14,3 +14,9 @@ export type Vehicle = {
 export function listVehicles() {
   return apiGet<Vehicle[]>("/api/v1/vehicles");
 }
+
+export function getVehicleByVin(vin: string) {
+  return apiGet<Vehicle>(`/api/v1/vehicles/${encodeURIComponent(vin)}`);
+}
+
+export const getVehicles = listVehicles;

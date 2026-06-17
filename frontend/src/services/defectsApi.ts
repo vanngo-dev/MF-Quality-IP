@@ -15,3 +15,9 @@ export type Defect = {
 export function listDefects() {
   return apiGet<Defect[]>("/api/v1/defects");
 }
+
+export function getDefectById(id: number) {
+  return apiGet<Defect>(`/api/v1/defects/${id}`);
+}
+
+export const getDefects = listDefects;
