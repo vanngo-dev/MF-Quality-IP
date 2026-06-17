@@ -94,6 +94,25 @@ Rule engine tests verify:
 
 Event-generator tests verify `defect-spike` mode and mock publishing counts.
 
+## Phase 8 Frontend Foundation Coverage
+
+Frontend tests verify:
+
+- App renders.
+- Root route redirects to `/dashboard`.
+- Dashboard route renders.
+- Sidebar navigation renders.
+- Sidebar contains Dashboard, Stations, Equipment, Vehicles, Defects, Alerts, and Investigations links.
+- Sidebar navigation can move between routes.
+- Dashboard displays mock stat cards.
+- Status badges render supported labels.
+- Severity badges render supported labels.
+- Loading state renders.
+- Error state renders.
+- API client uses the configured base URL or default base URL.
+
+Phase 8 tests do not require the backend API to be running because pages use mock/static data. Live data testing starts in Phase 9.
+
 ## Local Test Command
 
 Backend:
@@ -117,6 +136,15 @@ Worker:
 cd worker
 pip install -e .
 pytest
+```
+
+Frontend:
+
+```powershell
+cd frontend
+npm install
+npm run test
+npm run build
 ```
 
 If editable install is not available:
@@ -313,3 +341,34 @@ Expected results:
 - Running the same defect spike twice does not create duplicate open alerts for the same condition.
 
 See `docs/phase7.md` for the dedicated Phase 7 guide.
+
+## Frontend Manual Verification
+
+Phase 8 manual verification:
+
+```powershell
+cd frontend
+npm install
+npm run test
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+Expected results:
+
+- Dashboard page loads.
+- Sidebar appears.
+- Navigation links work.
+- Each route loads without crashing.
+- Status badges display workflow statuses.
+- Severity badges display severity levels.
+- No browser console errors.
+
+The backend does not need to be running for the Phase 8 frontend demo.
+
+See `docs/phase8.md` for the dedicated Phase 8 guide.

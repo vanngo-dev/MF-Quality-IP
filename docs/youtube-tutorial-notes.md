@@ -604,3 +604,95 @@ docker compose exec redpanda rpk topic consume quality.alerts --num 5
 ```bash
 git commit -m "phase-7 rule based quality alert engine"
 ```
+
+## Phase 8: React Frontend Foundation
+
+### Video Title:
+
+Build the React Frontend Foundation for a Manufacturing Quality Dashboard
+
+### Goal of This Phase:
+
+Create the frontend dashboard shell with routing, reusable components, API client structure, and tests without connecting live backend data yet.
+
+Detailed guide: `docs/phase8.md`
+
+### What We Build:
+
+- Vite React + TypeScript frontend structure.
+- React Router route configuration.
+- TanStack Query client setup for Phase 9.
+- Sidebar dashboard layout.
+- Page header, stat card, data table, status badge, severity badge, loading state, and error state components.
+- Placeholder pages for dashboard, stations, equipment, vehicles, defects, alerts, and investigations.
+- API service files for future backend integration.
+- Frontend tests with Vitest and React Testing Library.
+
+### Why This Matters for Manufacturing Quality:
+
+Quality teams need a clear operational interface for station health, equipment, vehicles, defects, alerts, and investigations. Phase 8 builds the navigation and component foundation first so Phase 9 can focus on live data instead of layout plumbing.
+
+### Code Walkthrough:
+
+1. Confirm the existing `frontend/` Vite app.
+2. Add React Router and TanStack Query.
+3. Create `AppLayout`, `Sidebar`, and `PageHeader`.
+4. Create reusable UI components.
+5. Add routed feature pages.
+6. Add API client service files using `VITE_API_BASE_URL`.
+7. Explain why pages use mock/static data in Phase 8.
+8. Confirm live backend data starts in Phase 9.
+
+### Testing Walkthrough:
+
+Run:
+
+```powershell
+cd frontend
+npm install
+npm run test
+```
+
+Explain that tests verify app rendering, dashboard routing, sidebar links, mock stat cards, badges, loading and error states, and API base URL behavior.
+
+### Manual Demo:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+Click:
+
+- Dashboard
+- Stations
+- Equipment
+- Vehicles
+- Defects
+- Alerts
+- Investigations
+
+### Common Errors:
+
+- Node.js not installed: install Node.js 20 or newer.
+- `npm install` fails: rerun from the `frontend/` folder.
+- Port 5173 already in use: run `npm run dev -- --port 5174`.
+- Vite dev server starts but page is blank: check the console for import or route errors.
+- React Router route not found: open `/dashboard`.
+- Vitest cannot find jsdom: run `npm install`.
+- Testing Library import errors: confirm `src/setupTests.ts` imports `@testing-library/jest-dom/vitest`.
+- `VITE_API_BASE_URL` missing: Phase 8 falls back to `http://localhost:8000`.
+- Backend not running: Phase 8 still works with placeholders.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-8 react frontend foundation"
+```

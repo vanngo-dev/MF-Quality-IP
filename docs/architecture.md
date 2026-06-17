@@ -115,3 +115,25 @@ See `docs/phase7.md` for the Phase 7 runbook and troubleshooting guide.
 ## Phase 7 Boundary
 
 Phase 7 does not add frontend dashboard work, Elasticsearch indexing, AI summaries, or machine learning. Frontend dashboard work starts in Phase 8.
+
+## Phase 8 React Frontend Foundation
+
+Phase 8 turns the existing Vite frontend into a routed React + TypeScript dashboard shell.
+
+The frontend is intentionally separate from the FastAPI backend:
+
+```text
+frontend React app -> API client foundation -> FastAPI backend routes
+```
+
+This separation keeps UI routing, layout, browser state, and component tests independent from backend service availability. Phase 8 pages use mock/static data so the frontend can run and test without PostgreSQL, Redpanda, or FastAPI running.
+
+React Router provides internal routes for dashboard, stations, equipment, vehicles, defects, alerts, and investigations. Reusable components keep page headers, stat cards, tables, status badges, severity badges, loading states, and error states consistent across the application.
+
+TanStack Query is configured as the server-state foundation for Phase 9, when the mock page data will be replaced with live backend API responses.
+
+See `docs/phase8.md` for the Phase 8 runbook and troubleshooting guide.
+
+## Phase 8 Boundary
+
+Phase 8 does not integrate live backend data, add Elasticsearch UI, add AI summaries, or add end-to-end browser tests. Live backend data integration starts in Phase 9.

@@ -4,10 +4,10 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 7 adds a deterministic rule-based quality alert engine on top of the Phase 1-6 foundation:
+Phase 8 adds the React frontend foundation on top of the Phase 1-7 platform:
 
 - FastAPI backend with a health contract.
-- React + TypeScript + Vite frontend status surface.
+- React + TypeScript + Vite frontend dashboard shell.
 - PostgreSQL, Redpanda, and Elasticsearch local services through Docker Compose.
 - SQLAlchemy ORM models for plants, production lines, stations, equipment, vehicles, events, readings, defects, alerts, and investigations.
 - Alembic migration for the initial domain schema.
@@ -25,6 +25,9 @@ Phase 7 adds a deterministic rule-based quality alert engine on top of the Phase
 - Rule-based alert engine for repeated defects, sensor threshold breaches, defect spikes, and inspection failures.
 - Alert persistence into `quality_alerts`.
 - Alert publishing to the `quality.alerts` Redpanda topic.
+- React Router routes for dashboard, stations, equipment, vehicles, defects, alerts, and investigations.
+- Reusable frontend layout and UI components.
+- API client foundation prepared for Phase 9 live data integration.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -38,6 +41,7 @@ Detailed notes:
 - `docs/phase-05-redpanda-event-streaming.md`
 - `docs/phase6.md`
 - `docs/phase7.md`
+- `docs/phase8.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
 - `docs/data-model.md`
@@ -92,12 +96,15 @@ Backend API:
 ```powershell
 cd frontend
 npm install
+npm run test
 npm run dev
 ```
 
 Frontend app:
 
 - http://localhost:5173
+
+Phase 8 uses mock/static frontend data. The backend does not need to be running for the frontend shell or tests.
 
 ## Local Services
 
@@ -344,4 +351,28 @@ curl http://localhost:8000/api/v1/alerts
 docker compose exec redpanda rpk topic consume quality.alerts --num 5
 ```
 
-The frontend dashboard is intentionally not part of Phase 7. Frontend work starts in Phase 8.
+Phase 8 adds the frontend shell; live backend data integration starts in Phase 9.
+
+## Frontend Dashboard Foundation
+
+Phase 8 adds an internal engineering dashboard shell with sidebar navigation, routed pages, reusable UI components, and API service files prepared for Phase 9.
+
+Routes:
+
+- `/dashboard`
+- `/stations`
+- `/equipment`
+- `/vehicles`
+- `/defects`
+- `/alerts`
+- `/investigations`
+
+The root route redirects to `/dashboard`.
+
+The API base URL is configured with:
+
+```text
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Phase 9 will connect these pages to live backend data through TanStack Query.
