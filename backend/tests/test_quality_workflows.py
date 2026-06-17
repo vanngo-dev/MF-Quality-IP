@@ -151,6 +151,7 @@ def test_get_alert_by_id_returns_expected_alert(seeded_client: TestClient) -> No
 
     assert response.status_code == 200
     assert response.json()["id"] == created["id"]
+    assert response.json()["evidence_json"]["defect_count"] == 5
 
 
 def test_update_alert_status_success(seeded_client: TestClient) -> None:
@@ -177,6 +178,8 @@ def test_create_investigation_success(seeded_client: TestClient) -> None:
     body = response.json()
     assert body["title"] == "Investigate repeated torque defects"
     assert body["status"] == "draft"
+    assert body["ai_summary"] is None
+    assert body["created_at"] == body["opened_at"]
 
 
 def test_create_investigation_with_invalid_alert_fails(seeded_client: TestClient) -> None:
@@ -205,6 +208,7 @@ def test_get_investigation_by_id_returns_expected_investigation(seeded_client: T
 
     assert response.status_code == 200
     assert response.json()["id"] == created["id"]
+    assert response.json()["evidence_json"]["source"] == "manual_test"
 
 
 def test_update_investigation_success(seeded_client: TestClient) -> None:
@@ -218,6 +222,120 @@ def test_update_investigation_success(seeded_client: TestClient) -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "active"
     assert response.json()["summary"] == "Engineering review is underway"
+
+
+def test_create_investigation_from_alert_success(seeded_client: TestClient) -> None:
+    alert = _create_alert(seeded_client)
+
+    response = seeded_client.post(
+        f"/api/v1/alerts/{alert['id']}/investigation",
+        json={
+            "title": "Investigate repeated torque defects",
+            "summary": "Initial investigation opened from quality alert.",
+            "root_cause_hypothesis": "Torque tool may be drifting out of calibration.",
+            "status": "active",
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["alert_id"] == alert["id"]
+    assert body["status"] == "active"
+    assert body["evidence_json"]["defect_count"] == 5
+
+
+def test_create_investigation_from_missing_alert_fails(seeded_client: TestClient) -> None:
+    response = seeded_client.post(
+        "/api/v1/alerts/99999/investigation",
+        json={"title": "Missing alert investigation", "status": "active"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Alert not found"
+
+
+def test_create_investigation_from_alert_updates_alert_status_to_investigating(
+    seeded_client: TestClient,
+) -> None:
+    alert = _create_alert(seeded_client)
+
+    response = seeded_client.post(
+        f"/api/v1/alerts/{alert['id']}/investigation",
+        json={"title": "Investigate repeated torque defects", "status": "active"},
+    )
+
+    assert response.status_code == 201
+    updated_alert = seeded_client.get(f"/api/v1/alerts/{alert['id']}").json()
+    assert updated_alert["status"] == "investigating"
+
+
+def test_duplicate_active_investigation_from_same_alert_is_prevented(seeded_client: TestClient) -> None:
+    alert = _create_alert(seeded_client)
+    payload = {"title": "Investigate repeated torque defects", "status": "active"}
+
+    first_response = seeded_client.post(f"/api/v1/alerts/{alert['id']}/investigation", json=payload)
+    second_response = seeded_client.post(f"/api/v1/alerts/{alert['id']}/investigation", json=payload)
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 409
+    assert second_response.json()["detail"] == "Active investigation already exists for alert"
+
+
+def test_update_investigation_summary_success(seeded_client: TestClient) -> None:
+    created = seeded_client.post("/api/v1/investigations", json=_investigation_payload(seeded_client)).json()
+
+    response = seeded_client.patch(
+        f"/api/v1/investigations/{created['id']}",
+        json={"summary": "Containment review assigned to quality engineering."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["summary"] == "Containment review assigned to quality engineering."
+
+
+def test_update_investigation_root_cause_hypothesis_success(seeded_client: TestClient) -> None:
+    created = seeded_client.post("/api/v1/investigations", json=_investigation_payload(seeded_client)).json()
+
+    response = seeded_client.patch(
+        f"/api/v1/investigations/{created['id']}",
+        json={"root_cause_hypothesis": "Fixture clamp drifted out of tolerance."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["root_cause_hypothesis"] == "Fixture clamp drifted out of tolerance."
+
+
+def test_update_investigation_status_success(seeded_client: TestClient) -> None:
+    created = seeded_client.post("/api/v1/investigations", json=_investigation_payload(seeded_client)).json()
+
+    response = seeded_client.patch(f"/api/v1/investigations/{created['id']}/status", json={"status": "active"})
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "active"
+
+
+def test_invalid_investigation_status_endpoint_fails(seeded_client: TestClient) -> None:
+    created = seeded_client.post("/api/v1/investigations", json=_investigation_payload(seeded_client)).json()
+
+    response = seeded_client.patch(f"/api/v1/investigations/{created['id']}/status", json={"status": "closed"})
+
+    assert response.status_code == 422
+
+
+def test_resolve_investigation_success_and_related_alert_resolved(seeded_client: TestClient) -> None:
+    alert = _create_alert(seeded_client)
+    investigation = seeded_client.post(
+        f"/api/v1/alerts/{alert['id']}/investigation",
+        json={"title": "Investigate repeated torque defects", "status": "active"},
+    ).json()
+
+    response = seeded_client.patch(f"/api/v1/investigations/{investigation['id']}/status", json={"status": "resolved"})
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "resolved"
+    assert response.json()["closed_at"] is not None
+    updated_alert = seeded_client.get(f"/api/v1/alerts/{alert['id']}").json()
+    assert updated_alert["status"] == "resolved"
 
 
 def test_update_investigation_with_invalid_status_fails(seeded_client: TestClient) -> None:

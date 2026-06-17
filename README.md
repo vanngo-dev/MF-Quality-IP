@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 10 adds Elasticsearch quality investigation search on top of the Phase 1-9 platform:
+Phase 11 adds the engineer quality investigation workflow on top of the Phase 1-10 platform:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend dashboard connected to live API data with TanStack Query.
@@ -37,6 +37,9 @@ Phase 10 adds Elasticsearch quality investigation search on top of the Phase 1-9
 - Backend search endpoints for grouped and specialized search results.
 - Reindex command for rebuilding search documents from PostgreSQL.
 - Frontend `/search` page with grouped results for defects, alerts, investigations, and events.
+- Alert detail page for reviewing alert evidence and opening investigations.
+- Investigation detail page for editing summaries, root-cause hypotheses, and statuses.
+- Investigation workflow actions for acknowledging alerts, creating investigations, resolving investigations, and resolving related alerts.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -53,6 +56,7 @@ Detailed notes:
 - `docs/phase8.md`
 - `docs/phase9.md`
 - `docs/phase10.md`
+- `docs/phase11.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
 - `docs/data-model.md`
@@ -448,3 +452,38 @@ http://localhost:5173/search
 ```
 
 Advanced search filters are deferred. The full investigation lifecycle workflow starts in Phase 11, and AI summaries start in Phase 12.
+
+## Quality Investigation Workflow
+
+Phase 11 lets engineers move from an alert to an investigation:
+
+```text
+Alert detail -> evidence review -> create investigation -> edit hypothesis and notes -> resolve investigation -> resolve alert
+```
+
+Workflow endpoints:
+
+```text
+POST /api/v1/alerts/{id}/investigation
+PATCH /api/v1/investigations/{id}
+PATCH /api/v1/investigations/{id}/status
+PATCH /api/v1/alerts/{id}/status
+```
+
+Frontend routes:
+
+```text
+/alerts/{id}
+/investigations/{id}
+```
+
+Investigation statuses:
+
+- `draft`
+- `active`
+- `waiting_on_data`
+- `resolved`
+
+Creating an investigation from an open or acknowledged alert moves the alert to `investigating`. Resolving an investigation also resolves the related alert. Evidence from the alert is copied into the investigation so the engineering context remains attached.
+
+AI summary generation is intentionally not included yet. Phase 11 only displays the placeholder that AI summaries start in Phase 12.

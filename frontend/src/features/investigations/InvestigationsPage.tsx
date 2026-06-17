@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
 import { PageHeader } from "../../components/layout/PageHeader";
 import { DataTable } from "../../components/ui/DataTable";
@@ -24,7 +25,15 @@ export function InvestigationsPage() {
       <DataTable
         caption="Investigations"
         columns={[
-          { key: "title", header: "Title", render: (row) => row.title },
+          {
+            key: "title",
+            header: "Title",
+            render: (row) => (
+              <Link className="text-link" to={`/investigations/${row.id}`}>
+                {row.title}
+              </Link>
+            ),
+          },
           { key: "alert", header: "Alert ID", render: (row) => row.alert_id },
           { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
           {

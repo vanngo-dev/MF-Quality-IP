@@ -5,8 +5,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Equipment, QualityAlert, Station
-from app.schemas import AlertResponse, CreateAlertRequest, UpdateAlertStatusRequest
+from app.models import Equipment, Investigation, QualityAlert, Station
+from app.schemas import (
+    AlertResponse,
+    CreateAlertRequest,
+    CreateInvestigationFromAlertRequest,
+    InvestigationResponse,
+    UpdateAlertStatusRequest,
+)
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["quality alerts"])
 
@@ -79,3 +85,44 @@ def update_alert_status(
     session.refresh(alert)
 
     return alert
+
+
+@router.post("/{alert_id}/investigation", response_model=InvestigationResponse, status_code=status.HTTP_201_CREATED)
+def create_investigation_from_alert(
+    alert_id: int,
+    request: CreateInvestigationFromAlertRequest,
+    session: SessionDependency,
+) -> Investigation:
+    alert = session.get(QualityAlert, alert_id)
+
+    if alert is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    existing_investigation = session.scalar(
+        select(Investigation).where(
+            Investigation.alert_id == alert_id,
+            Investigation.status != "resolved",
+        ),
+    )
+
+    if existing_investigation is not None:
+        raise HTTPException(status_code=409, detail="Active investigation already exists for alert")
+
+    investigation = Investigation(
+        alert_id=alert.id,
+        title=request.title,
+        summary=request.summary,
+        root_cause_hypothesis=request.root_cause_hypothesis,
+        evidence_json=alert.evidence_json or {},
+        status=request.status,
+    )
+
+    if alert.status in {"open", "acknowledged"}:
+        alert.status = "investigating"
+
+    session.add(alert)
+    session.add(investigation)
+    session.commit()
+    session.refresh(investigation)
+
+    return investigation

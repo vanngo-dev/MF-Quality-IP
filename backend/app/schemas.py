@@ -123,12 +123,23 @@ class CreateInvestigationRequest(BaseModel):
     status: InvestigationStatus = "draft"
 
 
+class CreateInvestigationFromAlertRequest(BaseModel):
+    title: str
+    summary: str | None = None
+    root_cause_hypothesis: str | None = None
+    status: InvestigationStatus = "active"
+
+
 class UpdateInvestigationRequest(BaseModel):
     title: str | None = None
     summary: str | None = None
     root_cause_hypothesis: str | None = None
     evidence_json: dict[str, object] | None = None
     status: InvestigationStatus | None = None
+
+
+class UpdateInvestigationStatusRequest(BaseModel):
+    status: InvestigationStatus
 
 
 class InvestigationResponse(ORMResponse):
@@ -138,7 +149,9 @@ class InvestigationResponse(ORMResponse):
     summary: str | None
     root_cause_hypothesis: str | None
     evidence_json: dict[str, object]
+    ai_summary: str | None
     status: str
+    created_at: datetime
     opened_at: datetime
     updated_at: datetime
     closed_at: datetime | None

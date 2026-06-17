@@ -174,3 +174,11 @@ class Investigation(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     alert: Mapped[QualityAlert] = relationship(back_populates="investigations")
+
+    @property
+    def created_at(self) -> datetime:
+        return self.opened_at
+
+    @property
+    def ai_summary(self) -> None:
+        return None

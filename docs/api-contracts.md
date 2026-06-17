@@ -34,11 +34,13 @@ GET /api/v1/alerts
 POST /api/v1/alerts
 GET /api/v1/alerts/{id}
 PATCH /api/v1/alerts/{id}/status
+POST /api/v1/alerts/{id}/investigation
 
 GET /api/v1/investigations
 POST /api/v1/investigations
 GET /api/v1/investigations/{id}
 PATCH /api/v1/investigations/{id}
+PATCH /api/v1/investigations/{id}/status
 ```
 
 Defect severities: `low`, `medium`, `high`, `critical`.
@@ -150,6 +152,71 @@ Search indexes:
 | `manufacturing-alerts` | `quality_alerts` |
 | `manufacturing-investigations` | `investigations` |
 | `manufacturing-events` | `production_events` |
+
+## Phase 11 Investigation Workflow
+
+Create an investigation from an alert:
+
+```text
+POST /api/v1/alerts/{id}/investigation
+```
+
+Request:
+
+```json
+{
+  "title": "Investigate repeated torque defects",
+  "summary": "Initial investigation opened from quality alert.",
+  "root_cause_hypothesis": "Torque tool may be drifting out of calibration.",
+  "status": "active"
+}
+```
+
+Response includes the linked `alert_id`, copied `evidence_json`, `ai_summary` as `null`, `created_at`, `opened_at`, `updated_at`, and `closed_at`.
+
+Duplicate active investigations for the same alert return `409`:
+
+```json
+{
+  "detail": "Active investigation already exists for alert"
+}
+```
+
+Update investigation fields:
+
+```text
+PATCH /api/v1/investigations/{id}
+```
+
+Update only investigation status:
+
+```text
+PATCH /api/v1/investigations/{id}/status
+```
+
+Request:
+
+```json
+{
+  "status": "resolved"
+}
+```
+
+Allowed investigation statuses:
+
+- `draft`
+- `active`
+- `waiting_on_data`
+- `resolved`
+
+Allowed alert statuses:
+
+- `open`
+- `acknowledged`
+- `investigating`
+- `resolved`
+
+When an investigation is resolved, the backend sets `closed_at` and updates the related alert status to `resolved`.
 
 ## Example Manual Checks
 

@@ -169,6 +169,39 @@ Frontend search tests verify:
 
 Normal automated tests use mocked Elasticsearch and mocked frontend `fetch`. They do not require a live Elasticsearch container.
 
+## Phase 11 Investigation Workflow Coverage
+
+Backend tests verify:
+
+- Create investigation from alert succeeds.
+- Creating from a missing alert returns `404`.
+- Creating from an alert updates alert status to `investigating`.
+- Duplicate active investigation creation for the same alert returns `409`.
+- Investigation summary updates successfully.
+- Root-cause hypothesis updates successfully.
+- Investigation status endpoint updates status successfully.
+- Invalid investigation status returns validation failure.
+- Resolving an investigation sets `closed_at`.
+- Resolving an investigation updates the related alert to `resolved`.
+- Investigation detail returns `evidence_json`.
+- Alert detail still returns alert evidence.
+
+Frontend tests verify:
+
+- Alert detail page renders alert data.
+- Alert detail page renders evidence.
+- Create investigation form renders.
+- Create investigation mutation calls the expected backend endpoint.
+- Investigation detail page renders investigation data.
+- Investigation form updates summary.
+- Investigation form updates root-cause hypothesis.
+- Investigation status update calls the status endpoint.
+- Evidence panel renders JSON evidence.
+- Timeline panel renders timeline items.
+- Search result links route to alert detail.
+
+Frontend workflow tests mock API responses. They do not require a running backend for normal automated runs.
+
 ## Local Test Command
 
 Backend:
@@ -541,3 +574,53 @@ Expected results:
 - Error state appears if backend or Elasticsearch is stopped.
 
 See `docs/phase10.md` for the dedicated Phase 10 guide.
+
+## Investigation Workflow Manual Verification
+
+Start services:
+
+```powershell
+docker compose up postgres redpanda redpanda-console elasticsearch
+```
+
+Run backend setup:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+pytest
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Create alert data if needed with the existing API or Phase 7 event flow.
+
+Start the frontend:
+
+```powershell
+cd frontend
+npm install
+npm run test
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173/alerts
+```
+
+Expected workflow:
+
+- Open an alert.
+- Review structured evidence.
+- Create an investigation.
+- Confirm alert status changes to investigating.
+- Open the investigation detail page.
+- Update summary and root-cause hypothesis.
+- Change investigation status.
+- Resolve the investigation.
+- Confirm the related alert is resolved.
+
+See `docs/phase11.md` for the dedicated Phase 11 guide.

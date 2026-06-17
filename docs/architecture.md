@@ -218,3 +218,43 @@ The frontend adds `/search` and a sidebar Search link. The page submits a free-t
 ## Phase 10 Boundary
 
 Phase 10 adds basic indexing, reindexing, backend search APIs, and a frontend search page. It does not add advanced filters, full investigation lifecycle screens, or AI summaries. The full investigation workflow starts in Phase 11, and AI summaries start in Phase 12.
+
+## Phase 11 Quality Investigation Workflow
+
+Phase 11 adds the engineer workflow that connects alerts to investigations:
+
+```text
+quality alert -> alert detail -> create investigation -> edit notes and hypothesis -> update status -> resolve investigation and alert
+```
+
+Backend workflow endpoints:
+
+```text
+POST /api/v1/alerts/{id}/investigation
+PATCH /api/v1/investigations/{id}
+PATCH /api/v1/investigations/{id}/status
+PATCH /api/v1/alerts/{id}/status
+```
+
+Creating an investigation from an alert copies `alert.evidence_json` into the investigation. This preserves the rule evidence that caused the alert, such as defect counts, time windows, station codes, equipment codes, and threshold values.
+
+The backend prevents duplicate active investigations for the same alert. If an active investigation already exists, the create-from-alert endpoint returns `409`.
+
+When an investigation is resolved, the backend sets `closed_at` and updates the related alert status to `resolved`. The existing alert status endpoint still allows engineers to acknowledge, investigate, or resolve alerts directly.
+
+The frontend adds:
+
+- `/alerts/:id`
+- `/investigations/:id`
+- `AlertDetailPage`
+- `InvestigationDetailPage`
+- `InvestigationForm`
+- `EvidencePanel`
+- `TimelinePanel`
+- status action panels
+
+Search result cards for alerts and investigations now route to the corresponding detail pages when possible.
+
+## Phase 11 Boundary
+
+Phase 11 adds the manual engineering workflow only. It does not call an AI provider, generate AI summaries, add AI summary buttons, or introduce Phase 12 endpoints.

@@ -73,7 +73,15 @@ export function AlertsPage() {
         caption="Alerts"
         columns={[
           { key: "code", header: "Alert Code", render: (row) => row.alert_code },
-          { key: "title", header: "Title", render: (row) => row.title },
+          {
+            key: "title",
+            header: "Title",
+            render: (row) => (
+              <Link className="text-link" to={`/alerts/${row.id}`}>
+                {row.title}
+              </Link>
+            ),
+          },
           { key: "station", header: "Station", render: (row) => stationLabel(row.station_id, stations) },
           { key: "equipment", header: "Equipment", render: (row) => equipmentLabel(row.equipment_id, equipment) },
           { key: "severity", header: "Severity", render: (row) => <SeverityBadge severity={row.severity} /> },
@@ -95,7 +103,7 @@ export function AlertsPage() {
                     Acknowledge
                   </button>
                 ) : null}
-                <Link className="text-link" to="/investigations">
+                <Link className="text-link" to={`/alerts/${row.id}`}>
                   Open Investigation
                 </Link>
               </div>

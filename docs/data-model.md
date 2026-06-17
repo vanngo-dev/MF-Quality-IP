@@ -156,6 +156,38 @@ python -m app.search.reindex
 
 Advanced filters are intentionally deferred. The full investigation lifecycle workflow starts in Phase 11, and AI summaries start in Phase 12.
 
+## Phase 11 Investigation Workflow State
+
+Phase 11 uses the existing `quality_alerts` and `investigations` tables.
+
+Alerts can move through:
+
+- `open`
+- `acknowledged`
+- `investigating`
+- `resolved`
+
+Investigations can move through:
+
+- `draft`
+- `active`
+- `waiting_on_data`
+- `resolved`
+
+Creating an investigation from an alert:
+
+- requires the alert to exist
+- links the investigation through `alert_id`
+- copies `quality_alerts.evidence_json` into `investigations.evidence_json`
+- sets the alert to `investigating` when the alert was `open` or `acknowledged`
+- rejects duplicate active investigations for the same alert
+
+Investigation evidence matters because it preserves the structured facts that triggered the alert. Engineers can then add `summary` notes and a `root_cause_hypothesis` while they work toward containment or resolution.
+
+Updating an investigation refreshes `updated_at`. Resolving an investigation sets `closed_at` and resolves the related alert.
+
+The `ai_summary` value exposed by the API is a placeholder set to `null`. AI summary generation is intentionally deferred until Phase 12.
+
 ## Seed Data
 
 The seed command creates a small demo plant:

@@ -983,3 +983,138 @@ http://localhost:5173/search
 ```bash
 git commit -m "phase-10 elasticsearch quality investigation search"
 ```
+
+## Phase 11: Quality Investigation Workflow
+
+### Video Title:
+
+Build the Engineer Quality Investigation Workflow
+
+### Goal of This Phase:
+
+Create the complete manual investigation workflow that lets quality engineers move from an alert to an investigation, review evidence, update notes and root-cause hypotheses, change statuses, and resolve the investigation and related alert.
+
+Detailed guide: `docs/phase11.md`
+
+### What We Build:
+
+- `POST /api/v1/alerts/{id}/investigation`.
+- `PATCH /api/v1/investigations/{id}/status`.
+- Investigation update behavior that refreshes `updated_at`.
+- Resolution behavior that sets `closed_at` and resolves the related alert.
+- Duplicate active investigation prevention for the same alert.
+- Alert detail page.
+- Investigation detail page.
+- Investigation form.
+- Evidence panel.
+- Timeline panel.
+- Alert and investigation status action panels.
+- Search result links into alert and investigation detail routes.
+- Backend and frontend tests for the workflow.
+
+### Why This Matters for Manufacturing Quality:
+
+Alerts tell engineers that something needs attention. Investigations are where the quality team records what they learned, what they believe caused the issue, and whether the issue is contained or resolved.
+
+The workflow keeps evidence attached to the investigation so engineers do not lose the facts that triggered the alert.
+
+### Code Walkthrough:
+
+1. Confirm the backend lives in `backend/`.
+2. Review existing alert and investigation models.
+3. Add the create-from-alert endpoint.
+4. Copy `evidence_json` from alert to investigation.
+5. Prevent duplicate active investigations.
+6. Add investigation status endpoint.
+7. Resolve the related alert when an investigation is resolved.
+8. Add alert and investigation detail frontend routes.
+9. Add evidence and timeline panels.
+10. Confirm no Phase 12 AI summary generation is added.
+
+### Testing Walkthrough:
+
+Run backend tests:
+
+```powershell
+cd backend
+pytest
+```
+
+Explain tests for create-from-alert, missing alerts, duplicate active investigations, update summary, update root-cause hypothesis, status validation, resolution, alert resolution, and evidence detail.
+
+Run frontend tests:
+
+```powershell
+cd frontend
+npm install
+npm run test
+```
+
+Explain tests for alert detail, evidence panel, create form, create mutation, investigation detail, edit form, status update, timeline, and search result detail routing.
+
+### Manual Demo:
+
+Start services:
+
+```powershell
+docker compose up postgres redpanda redpanda-console elasticsearch
+```
+
+Run backend setup:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+pytest
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Create alert data with the Phase 7 defect spike or direct API POST.
+
+Start frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173/alerts
+```
+
+Demo steps:
+
+1. Open Alerts.
+2. Click an alert.
+3. Review evidence.
+4. Click Create Investigation.
+5. Enter title, summary, and root-cause hypothesis.
+6. Save the investigation.
+7. Open investigation detail.
+8. Edit the summary or hypothesis.
+9. Resolve the investigation.
+10. Confirm the related alert is resolved.
+
+### Common Errors:
+
+- No alerts exist to investigate: create an alert through the API or run the Phase 7 defect spike.
+- Alert ID not found: use an ID returned from `/api/v1/alerts`.
+- Duplicate investigation already exists for alert: open the existing active investigation or resolve it first.
+- Investigation status validation fails: use `draft`, `active`, `waiting_on_data`, or `resolved`.
+- Frontend route does not load because route path is missing: confirm `/alerts/:id` and `/investigations/:id` are registered.
+- Mutation succeeds but UI does not refresh: invalidate related alert and investigation queries after mutation.
+- CORS error: confirm `FRONTEND_ORIGIN=http://localhost:5173`.
+- Backend not running: start `python -m uvicorn app.main:app --reload --port 8000`.
+- Database not migrated: run `alembic upgrade head`.
+- Seed data missing: run `python -m app.db.seed`.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-11 quality investigation workflow"
+```

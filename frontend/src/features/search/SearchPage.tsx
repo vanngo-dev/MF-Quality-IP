@@ -10,11 +10,10 @@ import { searchAll, type GroupedSearchResults, type SearchResult } from "../../s
 const resultGroups: Array<{
   key: keyof GroupedSearchResults;
   title: string;
-  linkTo?: string;
 }> = [
-  { key: "defects", title: "Defects", linkTo: "/defects" },
-  { key: "alerts", title: "Alerts", linkTo: "/alerts" },
-  { key: "investigations", title: "Investigations", linkTo: "/investigations" },
+  { key: "defects", title: "Defects" },
+  { key: "alerts", title: "Alerts" },
+  { key: "investigations", title: "Investigations" },
   { key: "events", title: "Events" },
 ];
 
@@ -63,7 +62,6 @@ export function SearchPage() {
             {resultGroups.map((group) => (
               <ResultSection
                 key={group.key}
-                linkTo={group.linkTo}
                 results={searchQuery.data.results[group.key]}
                 title={group.title}
               />
@@ -78,11 +76,9 @@ export function SearchPage() {
 }
 
 function ResultSection({
-  linkTo,
   results,
   title,
 }: {
-  linkTo?: string;
   results: SearchResult[];
   title: string;
 }) {
@@ -110,8 +106,8 @@ function ResultSection({
                   </div>
                 ))}
               </dl>
-              {linkTo ? (
-                <Link className="text-link" to={linkTo}>
+              {resultLink(result) ? (
+                <Link className="text-link" to={resultLink(result) ?? "/"}>
                   Open {title}
                 </Link>
               ) : null}
@@ -123,6 +119,22 @@ function ResultSection({
       )}
     </section>
   );
+}
+
+function resultLink(result: SearchResult) {
+  if (result.type === "alert") {
+    return `/alerts/${result.id}`;
+  }
+
+  if (result.type === "investigation") {
+    return `/investigations/${result.id}`;
+  }
+
+  if (result.type === "defect") {
+    return "/defects";
+  }
+
+  return null;
 }
 
 function metadataItems(result: SearchResult) {
@@ -144,4 +156,3 @@ function sourceValue(result: SearchResult, key: string) {
 function countResults(results: GroupedSearchResults) {
   return resultGroups.reduce((count, group) => count + results[group.key].length, 0);
 }
-

@@ -5,8 +5,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Investigation, QualityAlert
-from app.schemas import CreateInvestigationRequest, InvestigationResponse, UpdateInvestigationRequest
+from app.models import Investigation, QualityAlert, utc_now
+from app.schemas import (
+    CreateInvestigationRequest,
+    InvestigationResponse,
+    UpdateInvestigationRequest,
+    UpdateInvestigationStatusRequest,
+)
 
 router = APIRouter(prefix="/api/v1/investigations", tags=["investigations"])
 
@@ -68,8 +73,45 @@ def update_investigation(
 
         setattr(investigation, field, value)
 
+    _apply_resolution_side_effects(investigation, session)
+    investigation.updated_at = utc_now()
     session.add(investigation)
     session.commit()
     session.refresh(investigation)
 
     return investigation
+
+
+@router.patch("/{investigation_id}/status", response_model=InvestigationResponse)
+def update_investigation_status(
+    investigation_id: int,
+    request: UpdateInvestigationStatusRequest,
+    session: SessionDependency,
+) -> Investigation:
+    investigation = session.get(Investigation, investigation_id)
+
+    if investigation is None:
+        raise HTTPException(status_code=404, detail="Investigation not found")
+
+    investigation.status = request.status
+    _apply_resolution_side_effects(investigation, session)
+    investigation.updated_at = utc_now()
+    session.add(investigation)
+    session.commit()
+    session.refresh(investigation)
+
+    return investigation
+
+
+def _apply_resolution_side_effects(investigation: Investigation, session: Session) -> None:
+    if investigation.status != "resolved":
+        return
+
+    if investigation.closed_at is None:
+        investigation.closed_at = utc_now()
+
+    alert = session.get(QualityAlert, investigation.alert_id)
+
+    if alert is not None:
+        alert.status = "resolved"
+        session.add(alert)
