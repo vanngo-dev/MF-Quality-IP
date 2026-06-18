@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 13 adds Playwright end-to-end coverage for the manufacturing quality workflow on top of the Phase 1-12 platform:
+Phase 14 adds Docker Compose app services and one-command demo workflows on top of the Phase 1-13 platform:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend dashboard connected to live API data with TanStack Query.
@@ -48,6 +48,11 @@ Phase 13 adds Playwright end-to-end coverage for the manufacturing quality workf
 - API-created E2E fixtures for reliable browser workflow tests.
 - Stable frontend `data-testid` selectors for critical quality workflow controls.
 - Root `make test-e2e` shortcut and direct Windows Playwright commands.
+- Dockerfiles for backend, worker, event generator, and frontend services.
+- Docker Compose services for the full local stack: PostgreSQL, Redpanda, Redpanda Console, Elasticsearch, backend, worker, event generator, and frontend.
+- Makefile commands for install, up, down, reset, migrate, seed, topics, demo data, tests, logs, status, and demo startup.
+- Fresh-clone `.env.example` values for host commands and Docker service-to-service URLs.
+- `make demo` wrapper plus staged `make demo-infra`, `make demo-data`, and `make demo-app` commands.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -67,6 +72,7 @@ Detailed notes:
 - `docs/phase11.md`
 - `docs/phase12.md`
 - `docs/phase13.md`
+- `docs/phase14.md`
 - `docs/adr/0004-ai-investigation-summary.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
@@ -85,6 +91,7 @@ e2e/                  Playwright end-to-end browser tests
 docs/                 Phase notes and tutorial notes
 .github/workflows/    GitHub Actions CI
 docker-compose.yml    Local platform services
+Makefile              Local developer and demo commands
 ```
 
 The FastAPI backend lives in `backend/`. This project does not use an `api/` folder.
@@ -94,6 +101,42 @@ The FastAPI backend lives in `backend/`. This project does not use an `api/` fol
 - Python 3.12+
 - Node.js 20+
 - Docker Desktop
+- Make for the one-command workflow, or PowerShell terminals for the fallback workflow
+
+## Fresh Clone Demo
+
+```powershell
+git clone REPLACE_WITH_REPO_URL
+cd manufacturing-quality-intelligence-platform
+copy .env.example .env
+docker compose config
+make demo
+```
+
+Open:
+
+- Frontend: http://localhost:5173
+- Backend docs: http://localhost:8000/docs
+- Redpanda Console: http://localhost:8080
+- Elasticsearch: http://localhost:9200
+
+`make demo` starts infrastructure, runs migrations, seeds data, creates Redpanda topics, publishes a defect-spike demo event set, and starts backend, worker, and frontend services. If Make is not available on Windows, use the PowerShell fallback commands in `docs/phase14.md`.
+
+Staged demo commands:
+
+```powershell
+make demo-infra
+make demo-data
+make demo-app
+```
+
+Reset local Docker state:
+
+```powershell
+make reset
+```
+
+`make reset` runs `docker compose down -v` and deletes local Docker volumes, including PostgreSQL demo data.
 
 ## Backend
 
@@ -186,6 +229,22 @@ Services:
 - Redpanda broker: localhost:19092
 - Redpanda Console: http://localhost:8080
 - Elasticsearch: http://localhost:9200
+- Backend API: http://localhost:8000
+- Frontend: http://localhost:5173
+
+Docker service-to-service URLs differ from host URLs:
+
+```text
+Host machine:
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/manufacturing_quality
+KAFKA_BOOTSTRAP_SERVERS=localhost:19092
+ELASTICSEARCH_URL=http://localhost:9200
+
+Inside Docker:
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/manufacturing_quality
+KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+ELASTICSEARCH_URL=http://elasticsearch:9200
+```
 
 ## Database Setup
 
@@ -210,6 +269,32 @@ The seed command creates:
 - 6 stations
 - 8 equipment records
 - 10 vehicles
+
+## Makefile Commands
+
+```powershell
+make install
+make up
+make down
+make reset
+make migrate
+make seed
+make create-topics
+make produce-demo-events
+make produce-defect-spike
+make test
+make test-api
+make test-worker
+make test-event-generator
+make test-frontend
+make test-e2e
+make reindex-search
+make demo
+make logs
+make status
+```
+
+`make test` runs the backend, worker, event-generator, and frontend suites. It does not include Playwright E2E because E2E requires running backend and frontend services.
 
 ## Tests
 
@@ -261,6 +346,12 @@ Docker Compose syntax:
 
 ```powershell
 docker compose config
+```
+
+Makefile target audit:
+
+```powershell
+Get-Content Makefile
 ```
 
 ## Manual Workflow Checks
@@ -402,7 +493,7 @@ select count(*) from defects;
 The worker uses `KAFKA_BOOTSTRAP_SERVERS` and `DATABASE_URL`. The repo default database URL is:
 
 ```text
-postgresql+psycopg2://quality:quality@localhost:5432/quality
+postgresql+psycopg2://postgres:postgres@localhost:5432/manufacturing_quality
 ```
 
 Duplicate event IDs are skipped safely. Invalid events are logged and skipped. Phase 7 generates rule-based quality alerts after successful worker persistence.
@@ -608,3 +699,25 @@ Dashboard -> Alerts -> Alert detail -> Create investigation -> Investigation det
 Automated Playwright tests use stable selectors such as `dashboard-page`, `alerts-page`, `alert-row`, `alert-detail-page`, `investigation-form`, `generate-ai-summary-button`, `ai-summary-panel`, and `resolve-investigation-button`.
 
 Manual full-system verification can still start Redpanda, run the worker, publish defect-spike events, and confirm alerts flow from stream ingestion into the UI before creating and resolving an investigation.
+
+## Dockerized One-Command Demo
+
+Phase 14 makes the complete local stack runnable through Docker Compose:
+
+```text
+frontend -> backend -> PostgreSQL
+event-generator -> Redpanda -> worker -> PostgreSQL -> backend -> frontend
+backend -> Elasticsearch for search
+```
+
+The one-shot `event-generator` service uses the Compose `tools` profile and is run by Makefile producer commands.
+
+Run:
+
+```powershell
+copy .env.example .env
+docker compose config
+make demo
+```
+
+If Make is not installed, run the direct PowerShell fallback in `docs/phase14.md`. CI is intentionally not added in Phase 14; GitHub Actions work starts in Phase 15.

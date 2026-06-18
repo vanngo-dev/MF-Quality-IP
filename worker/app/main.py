@@ -14,7 +14,7 @@ from app.services.alert_service import AlertService, KafkaAlertPublisher
 from app.services.persistence import PersistenceService, make_session_factory
 
 DEFAULT_BROKER = "localhost:19092"
-DEFAULT_DATABASE_URL = "postgresql+psycopg2://quality:quality@localhost:5432/quality"
+DEFAULT_DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/manufacturing_quality"
 
 logger = logging.getLogger(__name__)
 

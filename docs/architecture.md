@@ -308,3 +308,60 @@ The OpenAI-compatible provider is a placeholder for future work. The app works w
 ## Phase 12 Boundary
 
 Phase 12 adds the AI-assisted summary endpoint and UI panel only. It does not add Phase 13 end-to-end tests, chat UI, streaming output, or external model selection UI.
+
+## Phase 13 End-to-End Workflow Tests
+
+Phase 13 adds Playwright tests that exercise the running backend and frontend together:
+
+```text
+Playwright -> React frontend -> FastAPI backend -> PostgreSQL
+```
+
+The automated E2E suite creates alert fixtures through the FastAPI API, then drives the browser through dashboard loading, alert detail, investigation creation, AI summary generation, and investigation resolution. Redpanda and the worker remain part of the manual full-system demo, but automated E2E fixtures use the API so tests are not fragile around stream timing.
+
+## Phase 14 Docker Compose Demo Architecture
+
+Phase 14 makes the full local platform runnable through Docker Compose and Makefile commands.
+
+Services:
+
+- `postgres`: system-of-record database for plants, stations, equipment, vehicles, events, defects, alerts, and investigations.
+- `redpanda`: Kafka-compatible broker for manufacturing event topics.
+- `redpanda-console`: browser UI for inspecting Redpanda topics at `http://localhost:8080`.
+- `elasticsearch`: local search index at `http://localhost:9200`.
+- `backend`: FastAPI service at `http://localhost:8000`.
+- `worker`: long-running Kafka consumer that persists events and generates rule-based alerts.
+- `event-generator`: one-shot demo producer used by Makefile commands.
+- `frontend`: Vite React app at `http://localhost:5173`.
+
+Host URLs and Docker service URLs are intentionally different:
+
+```text
+Host machine:
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/manufacturing_quality
+KAFKA_BOOTSTRAP_SERVERS=localhost:19092
+ELASTICSEARCH_URL=http://localhost:9200
+
+Inside Docker:
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/manufacturing_quality
+KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+ELASTICSEARCH_URL=http://elasticsearch:9200
+```
+
+The one-command demo flow is:
+
+```text
+make demo
+  -> start infrastructure
+  -> run Alembic migrations
+  -> seed PostgreSQL
+  -> create Redpanda topics
+  -> publish defect-spike demo events
+  -> start backend, worker, and frontend
+```
+
+The frontend connects to the backend with `VITE_API_BASE_URL=http://localhost:8000` because the browser runs on the host machine even when the frontend dev server is inside Docker. The backend connects to PostgreSQL through `postgres:5432` inside Docker, and the worker connects to Redpanda through `redpanda:9092`.
+
+Elasticsearch remains a derived search index. PostgreSQL is still the source of truth, and `make reindex-search` runs the backend reindex command when demo data needs to be refreshed for the Search page.
+
+Phase 14 does not add GitHub Actions CI. CI starts in Phase 15.

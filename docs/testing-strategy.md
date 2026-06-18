@@ -808,3 +808,56 @@ Then open `http://localhost:5173/alerts`, create an investigation from an alert,
 Playwright stores screenshots, traces, and videos for failed or retried tests under `e2e/test-results/`. The HTML report is written to `e2e/playwright-report/`.
 
 See `docs/phase13.md` for the dedicated Phase 13 guide.
+
+## Phase 14 Docker Compose and Demo Workflow Coverage
+
+Phase 14 focuses on local developer experience rather than new product behavior. The important checks are:
+
+- `docker compose config` validates the full Compose file.
+- Root Makefile includes install, up, down, reset, migrate, seed, topic creation, demo producer, tests, E2E, reindex, demo, logs, and status targets.
+- Dockerfiles exist for backend, worker, event generator, and frontend.
+- Backend, worker, event-generator, and frontend commands still have direct PowerShell fallbacks.
+- `.env.example` documents host-machine URLs and Docker service-to-service URLs.
+- Fresh-clone setup is documented.
+- The one-command demo path and staged demo path are documented.
+
+Recommended Phase 14 checks:
+
+```powershell
+docker compose config
+Get-Content Makefile
+docker compose --profile tools config
+```
+
+If Docker can download base images and package dependencies:
+
+```powershell
+docker compose build backend worker event-generator frontend
+```
+
+If Docker Desktop is running and ports are available:
+
+```powershell
+make demo
+```
+
+Then verify:
+
+- Frontend opens at `http://localhost:5173`.
+- Backend health works at `http://localhost:8000/health`.
+- Backend docs load at `http://localhost:8000/docs`.
+- Redpanda Console opens at `http://localhost:8080`.
+- Elasticsearch responds at `http://localhost:9200`.
+- Dashboard loads seeded data.
+- Defect-spike events are available for the worker to consume.
+- Alerts appear after the worker processes events.
+- Investigation creation, AI summary generation, and resolution can be manually demoed.
+- Search works after `make reindex-search`.
+
+`make test` intentionally does not run Playwright E2E. Playwright requires running backend and frontend services, so it stays behind:
+
+```powershell
+make test-e2e
+```
+
+The direct PowerShell fallback for users without Make is documented in `docs/phase14.md`.

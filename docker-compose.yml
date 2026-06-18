@@ -3,15 +3,15 @@ services:
     image: postgres:16-alpine
     container_name: mqip-postgres
     environment:
-      POSTGRES_DB: quality
-      POSTGRES_USER: quality
-      POSTGRES_PASSWORD: quality
+      POSTGRES_DB: ${POSTGRES_DB:-manufacturing_quality}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U quality -d quality"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,6 +41,11 @@ services:
       - "9644:9644"
     volumes:
       - redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster info --brokers localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   redpanda-console:
     image: redpandadata/console:v2.8.1
@@ -68,6 +73,78 @@ services:
       interval: 15s
       timeout: 10s
       retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: mqip-backend
+    environment:
+      APP_NAME: ${APP_NAME:-Manufacturing Quality Intelligence Platform}
+      ENVIRONMENT: docker
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql+psycopg2://postgres:postgres@postgres:5432/manufacturing_quality}
+      KAFKA_BOOTSTRAP_SERVERS: ${DOCKER_KAFKA_BOOTSTRAP_SERVERS:-redpanda:9092}
+      ELASTICSEARCH_URL: ${DOCKER_ELASTICSEARCH_URL:-http://elasticsearch:9200}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      AI_SUMMARY_PROVIDER: ${AI_SUMMARY_PROVIDER:-mock}
+      OPENAI_COMPATIBLE_BASE_URL: ${OPENAI_COMPATIBLE_BASE_URL:-}
+      OPENAI_COMPATIBLE_API_KEY: ${OPENAI_COMPATIBLE_API_KEY:-}
+      OPENAI_COMPATIBLE_MODEL: ${OPENAI_COMPATIBLE_MODEL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5).read()",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  worker:
+    build:
+      context: ./worker
+    container_name: mqip-worker
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql+psycopg2://postgres:postgres@postgres:5432/manufacturing_quality}
+      KAFKA_BOOTSTRAP_SERVERS: ${DOCKER_KAFKA_BOOTSTRAP_SERVERS:-redpanda:9092}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+
+  event-generator:
+    build:
+      context: ./event-generator
+    container_name: mqip-event-generator
+    profiles:
+      - tools
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ${DOCKER_KAFKA_BOOTSTRAP_SERVERS:-redpanda:9092}
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: mqip-frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "5173:5173"
 
 volumes:
   postgres-data:

@@ -457,7 +457,7 @@ select count(*) from defects;
 - Wrong Kafka broker port: use `localhost:19092` from the host.
 - Topics do not exist: run the `rpk topic create` command.
 - Worker cannot connect to PostgreSQL: confirm the `postgres` service is running.
-- `DATABASE_URL` is wrong: the repo default is `postgresql+psycopg2://quality:quality@localhost:5432/quality`.
+- `DATABASE_URL` is wrong: the repo default is `postgresql+psycopg2://postgres:postgres@localhost:5432/manufacturing_quality`.
 - Migrations not run: run `alembic upgrade head` from `backend/`.
 - Seed data missing: run `python -m app.db.seed`.
 - Foreign key errors from unknown vehicle/station/equipment IDs: publish deterministic demo events or add matching seed data.
@@ -1381,4 +1381,169 @@ Open `http://localhost:5173/alerts`, open an alert, create an investigation, gen
 
 ```bash
 git commit -m "phase-13 end to end manufacturing quality workflow tests"
+```
+
+## Phase 14: Docker Compose and One-Command Demo
+
+### Video Title:
+
+Dockerize a Manufacturing Quality Platform with One-Command Local Demo
+
+### Goal of This Phase:
+
+Make the full project easy to run from a fresh clone with Docker Compose, Makefile commands, reset commands, demo data setup, and clear Windows PowerShell fallback instructions.
+
+Detailed guide: `docs/phase14.md`
+
+### What We Build:
+
+- Dockerfiles for `backend/`, `worker/`, `event-generator/`, and `frontend/`.
+- Docker Compose services for PostgreSQL, Redpanda, Redpanda Console, Elasticsearch, backend, worker, event generator, and frontend.
+- `.env.example` with host-machine URLs and Docker service-to-service URLs.
+- Root Makefile commands for install, up, down, reset, migrate, seed, topics, demo producers, tests, E2E, reindex, logs, status, and demo startup.
+- `make demo` wrapper plus staged `make demo-infra`, `make demo-data`, and `make demo-app`.
+- Fresh-clone setup documentation.
+- PowerShell fallback demo commands for users without Make.
+
+### Why This Matters for Manufacturing Quality:
+
+The project now has enough moving parts that a recruiter, interviewer, or teammate should not need to reverse-engineer startup order. Phase 14 turns the platform into a repeatable local demo where events flow from the generator through Redpanda and the worker into PostgreSQL, then appear through the FastAPI backend and React frontend.
+
+### Code Walkthrough:
+
+1. Confirm the FastAPI backend lives in `backend/`, not `api/`.
+2. Inspect existing Compose infrastructure services.
+3. Add simple Dockerfiles for the four runnable app folders.
+4. Add backend, worker, event-generator, and frontend services to Docker Compose.
+5. Explain host URLs versus Docker service URLs.
+6. Update `.env.example`.
+7. Expand the root Makefile with lifecycle, reset, seed, demo data, test, E2E, reindex, logs, and status commands.
+8. Walk through `make demo-infra`, `make demo-data`, `make demo-app`, and `make demo`.
+9. Explain why GitHub Actions CI is not added until Phase 15.
+10. Explain why portfolio polish is not added until Phase 16.
+
+### Testing Walkthrough:
+
+Validate Compose:
+
+```powershell
+docker compose config
+```
+
+Audit Makefile targets:
+
+```powershell
+Get-Content Makefile
+```
+
+Run existing test suites:
+
+```powershell
+cd backend
+pytest
+```
+
+```powershell
+cd worker
+pytest
+```
+
+```powershell
+cd event-generator
+pytest
+```
+
+```powershell
+cd frontend
+npm run test:run
+```
+
+Explain that Playwright E2E is separate because it requires running backend and frontend services:
+
+```powershell
+make test-e2e
+```
+
+### Manual Demo:
+
+Fresh clone:
+
+```powershell
+git clone REPLACE_WITH_REPO_URL
+cd manufacturing-quality-intelligence-platform
+copy .env.example .env
+docker compose config
+make demo
+```
+
+Without Make, start infrastructure:
+
+```powershell
+docker compose up postgres redpanda redpanda-console elasticsearch
+```
+
+Backend terminal:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Worker terminal:
+
+```powershell
+cd worker
+pip install -e .
+python -m app.main
+```
+
+Event generator terminal:
+
+```powershell
+cd event-generator
+pip install -e .
+python -m app.main --mode defect-spike --publish --broker localhost:19092
+```
+
+Frontend terminal:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+- Frontend: http://localhost:5173
+- Backend docs: http://localhost:8000/docs
+- Redpanda Console: http://localhost:8080
+- Elasticsearch: http://localhost:9200
+
+### Common Errors:
+
+- Docker Desktop not running: start Docker Desktop and rerun `docker compose config`.
+- Docker Compose config fails: check YAML indentation and environment variable syntax.
+- Port 5432 already in use: stop the existing PostgreSQL process or change the Compose port.
+- Port 8000 already in use: stop the existing backend process.
+- Port 5173 already in use: stop the existing Vite dev server or use another frontend port.
+- Port 9200 already in use: stop the existing Elasticsearch process.
+- Port 19092 already in use: stop the existing Kafka or Redpanda process.
+- Make not installed on Windows: use the direct PowerShell fallback commands.
+- Database connection uses `localhost` inside Docker: use `postgres:5432` inside Docker.
+- Kafka broker uses `localhost` inside Docker: use `redpanda:9092` inside Docker.
+- Elasticsearch security enabled: keep `xpack.security.enabled=false` for local development.
+- Migrations not run: run `make migrate` or `alembic upgrade head`.
+- Seed data missing: run `make seed` or `python -m app.db.seed`.
+- Topics not created: run `make create-topics`.
+- Worker started before topics exist: create topics, then restart the worker.
+- Frontend cannot reach backend because `VITE_API_BASE_URL` is wrong: use `http://localhost:8000`.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-14 dockerized one command demo workflow"
 ```
