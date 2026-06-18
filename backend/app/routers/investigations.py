@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.ai.investigation_summary import generate_and_save_investigation_summary
+from app.ai.schemas import AISummaryResponse
 from app.db import get_session
 from app.models import Investigation, QualityAlert, utc_now
 from app.schemas import (
@@ -101,6 +103,18 @@ def update_investigation_status(
     session.refresh(investigation)
 
     return investigation
+
+
+@router.post("/{investigation_id}/ai-summary", response_model=AISummaryResponse)
+def generate_ai_summary(investigation_id: int, session: SessionDependency) -> AISummaryResponse:
+    investigation = session.get(Investigation, investigation_id)
+
+    if investigation is None:
+        raise HTTPException(status_code=404, detail="Investigation not found")
+
+    summary = generate_and_save_investigation_summary(session, investigation)
+
+    return AISummaryResponse(investigation_id=investigation.id, ai_summary=summary)
 
 
 def _apply_resolution_side_effects(investigation: Investigation, session: Session) -> None:

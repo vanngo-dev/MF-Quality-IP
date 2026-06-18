@@ -186,7 +186,38 @@ Investigation evidence matters because it preserves the structured facts that tr
 
 Updating an investigation refreshes `updated_at`. Resolving an investigation sets `closed_at` and resolves the related alert.
 
-The `ai_summary` value exposed by the API is a placeholder set to `null`. AI summary generation is intentionally deferred until Phase 12.
+Before Phase 12, `ai_summary` was exposed as a placeholder. Phase 12 persists generated structured summaries in the investigation record.
+
+## Phase 12 AI Summary Persistence
+
+Phase 12 adds a nullable JSON field:
+
+| Table | Column | Purpose |
+| --- | --- | --- |
+| `investigations` | `ai_summary` | Persisted structured AI-assisted summary generated from available platform evidence. |
+
+The saved summary contains:
+
+- likely issue
+- affected station
+- affected equipment
+- evidence list
+- recommended next checks
+- confidence
+- limitations
+
+The summary is generated from existing records only:
+
+- linked alert details
+- alert `evidence_json`
+- related defects
+- related sensor readings
+- related station events
+- investigation notes
+- root-cause hypothesis
+- investigation `evidence_json`
+
+AI is treated as an assistant, not an authority. The stored summary must include limitations and avoid invented root-cause claims.
 
 ## Seed Data
 

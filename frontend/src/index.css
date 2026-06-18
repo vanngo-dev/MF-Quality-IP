@@ -759,6 +759,65 @@ textarea {
   outline: 3px solid rgb(31 157 138 / 18%);
 }
 
+.ai-summary-content {
+  display: grid;
+  gap: 16px;
+}
+
+.ai-summary-main {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+}
+
+.ai-summary-main h3,
+.ai-summary-list h3 {
+  margin: 0 0 8px;
+  color: #172026;
+  font-size: 14px;
+}
+
+.confidence-badge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.confidence-low {
+  color: #7a4d00;
+  background: #fff3cd;
+}
+
+.confidence-medium {
+  color: #17456b;
+  background: #dbeafe;
+}
+
+.confidence-high {
+  color: #842029;
+  background: #f8d7da;
+}
+
+.compact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ai-summary-list ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: #53636f;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 @media (max-width: 980px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -812,8 +871,13 @@ textarea {
   }
 
   .detail-heading,
-  .workflow-panel-header {
+  .workflow-panel-header,
+  .ai-summary-main {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .compact-grid {
+    grid-template-columns: 1fr;
   }
 }

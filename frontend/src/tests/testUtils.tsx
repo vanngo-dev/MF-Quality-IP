@@ -5,6 +5,21 @@ import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 
 export const apiFixtures = {
+  aiSummary: {
+    likely_issue: "Repeated torque defects may indicate a possible torque tool calibration or process drift.",
+    affected_station: "ST-TORQUE",
+    affected_equipment: "EQ-TQ-01",
+    evidence: [
+      "Alert REPEATED_DEFECT_STATION reported Repeated torque defects.",
+      "Related defects include TORQUE_LOW.",
+    ],
+    recommended_next_checks: [
+      "Verify torque tool calibration history.",
+      "Compare torque readings across adjacent stations.",
+    ],
+    confidence: "medium",
+    limitations: ["The summary is based only on events and notes stored in the platform."],
+  },
   stations: [
     { id: 1, line_id: 1, code: "ST-TORQUE", name: "Torque Station", sequence_order: 1 },
     { id: 2, line_id: 1, code: "ST-PAINT", name: "Paint Inspection", sequence_order: 2 },
@@ -208,6 +223,10 @@ export function createApiResponseMap(overrides: ApiResponseMap = {}): ApiRespons
       status: "resolved",
       closed_at: "2026-06-09T12:35:00Z",
       updated_at: "2026-06-09T12:35:00Z",
+    },
+    "POST /api/v1/investigations/1/ai-summary": {
+      investigation_id: 1,
+      ai_summary: apiFixtures.aiSummary,
     },
     "GET /api/v1/search": apiFixtures.search,
     "GET /api/v1/search/defects": { query: "torque", results: apiFixtures.search.results.defects },

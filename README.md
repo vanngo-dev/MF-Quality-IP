@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 11 adds the engineer quality investigation workflow on top of the Phase 1-10 platform:
+Phase 12 adds evidence-grounded AI-assisted investigation summaries on top of the Phase 1-11 platform:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend dashboard connected to live API data with TanStack Query.
@@ -40,6 +40,10 @@ Phase 11 adds the engineer quality investigation workflow on top of the Phase 1-
 - Alert detail page for reviewing alert evidence and opening investigations.
 - Investigation detail page for editing summaries, root-cause hypotheses, and statuses.
 - Investigation workflow actions for acknowledging alerts, creating investigations, resolving investigations, and resolving related alerts.
+- Mock-first AI summary provider that works without paid external APIs.
+- Evidence-grounded investigation summary endpoint.
+- Persisted structured `ai_summary` JSON on investigations.
+- Frontend Generate AI Summary action and summary panel.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -57,6 +61,8 @@ Detailed notes:
 - `docs/phase9.md`
 - `docs/phase10.md`
 - `docs/phase11.md`
+- `docs/phase12.md`
+- `docs/adr/0004-ai-investigation-summary.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
 - `docs/data-model.md`
@@ -106,6 +112,7 @@ Backend API:
 - Alerts: http://localhost:8000/api/v1/alerts
 - Investigations: http://localhost:8000/api/v1/investigations
 - Search: http://localhost:8000/api/v1/search?q=torque
+- AI Summary: http://localhost:8000/api/v1/investigations/1/ai-summary
 
 ## Frontend
 
@@ -487,3 +494,45 @@ Investigation statuses:
 Creating an investigation from an open or acknowledged alert moves the alert to `investigating`. Resolving an investigation also resolves the related alert. Evidence from the alert is copied into the investigation so the engineering context remains attached.
 
 AI summary generation is intentionally not included yet. Phase 11 only displays the placeholder that AI summaries start in Phase 12.
+
+## AI-Assisted Investigation Summaries
+
+Phase 12 adds a grounded AI summary workflow for investigations. The default provider is deterministic and local:
+
+```text
+AI_SUMMARY_PROVIDER=mock
+```
+
+Optional future placeholder settings are available but not required:
+
+```text
+OPENAI_COMPATIBLE_BASE_URL=
+OPENAI_COMPATIBLE_API_KEY=
+OPENAI_COMPATIBLE_MODEL=
+```
+
+Generate and save a summary:
+
+```powershell
+curl -X POST http://localhost:8000/api/v1/investigations/REPLACE_WITH_INVESTIGATION_ID/ai-summary
+```
+
+The summary uses only platform evidence:
+
+- linked alert details
+- alert `evidence_json`
+- related defects
+- related sensor readings
+- related station events
+- investigation notes
+- root-cause hypothesis
+
+AI is an assistant, not an authority. The summary must include limitations, avoid invented root causes, and use cautious language such as `may indicate` or `possible`. High confidence should be rare.
+
+Frontend route:
+
+```text
+http://localhost:5173/investigations
+```
+
+Open an investigation and click Generate AI Summary.

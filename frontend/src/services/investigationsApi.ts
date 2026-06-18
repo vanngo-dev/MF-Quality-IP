@@ -1,5 +1,20 @@
 import { apiGet, apiPatch, apiPost } from "./apiClient";
 
+export type AiSummaryContent = {
+  likely_issue: string;
+  affected_station: string | null;
+  affected_equipment: string | null;
+  evidence: string[];
+  recommended_next_checks: string[];
+  confidence: "low" | "medium" | "high" | string;
+  limitations: string[];
+};
+
+export type AiSummaryResponse = {
+  investigation_id: number;
+  ai_summary: AiSummaryContent;
+};
+
 export type Investigation = {
   id: number;
   alert_id: number;
@@ -7,7 +22,7 @@ export type Investigation = {
   summary: string | null;
   root_cause_hypothesis: string | null;
   evidence_json: Record<string, unknown>;
-  ai_summary: string | null;
+  ai_summary: AiSummaryContent | null;
   status: string;
   created_at: string;
   opened_at: string;
@@ -63,6 +78,13 @@ export function createInvestigationFromAlert(alertId: number, payload: CreateInv
   return apiPost<Investigation, CreateInvestigationFromAlertRequest>(
     `/api/v1/alerts/${alertId}/investigation`,
     payload,
+  );
+}
+
+export function generateInvestigationAiSummary(investigationId: number) {
+  return apiPost<AiSummaryResponse, Record<string, never>>(
+    `/api/v1/investigations/${investigationId}/ai-summary`,
+    {},
   );
 }
 

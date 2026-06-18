@@ -258,3 +258,53 @@ Search result cards for alerts and investigations now route to the corresponding
 ## Phase 11 Boundary
 
 Phase 11 adds the manual engineering workflow only. It does not call an AI provider, generate AI summaries, add AI summary buttons, or introduce Phase 12 endpoints.
+
+## Phase 12 AI-Assisted Investigation Summary
+
+Phase 12 adds evidence-grounded summary generation for investigations:
+
+```text
+investigation detail -> generate summary mutation -> backend evidence gathering -> summary provider -> saved ai_summary JSON -> frontend summary panel
+```
+
+The default provider is:
+
+```text
+AI_SUMMARY_PROVIDER=mock
+```
+
+The mock provider is deterministic and local. It inspects available platform evidence and produces a structured summary without external API keys or network calls.
+
+Evidence sources:
+
+- linked alert details
+- alert `evidence_json`
+- related defects at the alert station or equipment
+- related sensor readings at the alert station or equipment
+- related station events
+- investigation title
+- investigation summary notes
+- investigation root-cause hypothesis
+- investigation `evidence_json`
+
+The summary response includes:
+
+- likely issue
+- affected station
+- affected equipment
+- evidence list
+- recommended next checks
+- confidence
+- limitations
+
+The backend persists the generated JSON into `investigations.ai_summary` and updates `updated_at`.
+
+## Phase 12 Guardrails
+
+AI summary generation must only use available evidence. It must not invent root cause or claim certainty. Missing evidence should be called out in limitations. Recommendations should be investigative checks, not production shutdown instructions unless existing platform evidence clearly supports that conclusion.
+
+The OpenAI-compatible provider is a placeholder for future work. The app works without OpenAI-compatible settings, and normal tests do not make network calls.
+
+## Phase 12 Boundary
+
+Phase 12 adds the AI-assisted summary endpoint and UI panel only. It does not add Phase 13 end-to-end tests, chat UI, streaming output, or external model selection UI.

@@ -104,7 +104,7 @@ def build_investigation_document(investigation: Investigation) -> dict[str, Any]
         "title": investigation.title,
         "summary": investigation.summary,
         "root_cause_hypothesis": investigation.root_cause_hypothesis,
-        "ai_summary": None,
+        "ai_summary": investigation.ai_summary,
         "status": investigation.status,
         "created_at": _isoformat(investigation.opened_at),
         "updated_at": _isoformat(investigation.updated_at),
@@ -138,4 +138,3 @@ def _equipment_code(equipment: Equipment | None) -> str | None:
 
 def _isoformat(value: datetime | None) -> str | None:
     return value.isoformat() if value is not None else None
-

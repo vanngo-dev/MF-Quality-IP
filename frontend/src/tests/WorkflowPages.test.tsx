@@ -80,7 +80,7 @@ describe("Phase 11 workflow pages", () => {
 
     expect((await screen.findAllByRole("heading", { name: "Investigate repeated torque defects" })).length).toBeGreaterThan(0);
     expect(screen.getByText("Torque tool may be drifting out of calibration")).toBeInTheDocument();
-    expect(screen.getByText("AI summaries start in Phase 12.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate AI Summary" })).toBeInTheDocument();
   });
 
   it("updates investigation summary and root-cause hypothesis", async () => {
@@ -151,4 +151,107 @@ describe("Phase 11 workflow pages", () => {
 
     expect((await screen.findAllByRole("heading", { name: "Low vision confidence" })).length).toBeGreaterThan(0);
   });
+
+  it("shows the Generate AI Summary button", async () => {
+    mockApiResponses();
+
+    renderApp("/investigations/1");
+
+    expect(await screen.findByRole("button", { name: "Generate AI Summary" })).toBeInTheDocument();
+  });
+
+  it("clicking Generate AI Summary calls the API mutation", async () => {
+    const fetchMock = mockApiResponses();
+
+    renderApp("/investigations/1");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Generate AI Summary" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "http://localhost:8000/api/v1/investigations/1/ai-summary",
+        expect.objectContaining({
+          body: JSON.stringify({}),
+          method: "POST",
+        }),
+      );
+    });
+  });
+
+  it("shows loading state while generating an AI summary", async () => {
+    const fetchMock = mockApiResponses();
+
+    renderApp("/investigations/1");
+
+    const button = await screen.findByRole("button", { name: "Generate AI Summary" });
+    fetchMock.mockImplementationOnce(() => new Promise<Response>(() => undefined));
+    fireEvent.click(button);
+
+    expect(await screen.findByText("Generating AI summary...")).toBeInTheDocument();
+  });
+
+  it("renders AI summary fields after generation", async () => {
+    mockApiResponses();
+
+    renderApp("/investigations/1");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Generate AI Summary" }));
+
+    expect(await screen.findByText(/Repeated torque defects may indicate/i)).toBeInTheDocument();
+    expect(screen.getByText("Evidence")).toBeInTheDocument();
+    expect(screen.getByText("Recommended Next Checks")).toBeInTheDocument();
+    expect(screen.getByText("medium")).toBeInTheDocument();
+    expect(screen.getByText("Limitations")).toBeInTheDocument();
+  });
+
+  it("renders an AI summary error state if generation fails", async () => {
+    mockApiResponses({
+      "POST /api/v1/investigations/1/ai-summary": new Error("summary failed"),
+    });
+
+    renderApp("/investigations/1");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Generate AI Summary" }));
+
+    expect(await screen.findByText("Unable to generate AI summary.")).toBeInTheDocument();
+  });
+
+  it("displays an existing AI summary", async () => {
+    mockApiResponses({
+      "GET /api/v1/investigations/1": {
+        ...mockExistingInvestigation(),
+        ai_summary: {
+          likely_issue: "Existing saved summary may indicate a station-specific torque issue.",
+          affected_station: "ST-TORQUE",
+          affected_equipment: "EQ-TQ-01",
+          evidence: ["Existing summary evidence."],
+          recommended_next_checks: ["Check torque calibration."],
+          confidence: "low",
+          limitations: ["Saved summary is based on prior platform evidence."],
+        },
+      },
+    });
+
+    renderApp("/investigations/1");
+
+    expect(await screen.findByText(/Existing saved summary/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Regenerate AI Summary" })).toBeInTheDocument();
+  });
 });
+
+function mockExistingInvestigation() {
+  return {
+    id: 1,
+    alert_id: 1,
+    title: "Investigate repeated torque defects",
+    summary: "Initial review",
+    root_cause_hypothesis: "Torque tool may be drifting out of calibration",
+    evidence_json: { source: "test" },
+    ai_summary: null,
+    status: "draft",
+    created_at: "2026-06-09T12:20:00Z",
+    opened_at: "2026-06-09T12:20:00Z",
+    updated_at: "2026-06-09T12:25:00Z",
+    closed_at: null,
+  };
+}

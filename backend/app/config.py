@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     kafka_bootstrap_servers: str = "localhost:19092"
     elasticsearch_url: str = "http://localhost:9200"
     ai_provider: str = "mock"
+    ai_summary_provider: str = "mock"
+    openai_compatible_base_url: str = ""
+    openai_compatible_api_key: str = ""
+    openai_compatible_model: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

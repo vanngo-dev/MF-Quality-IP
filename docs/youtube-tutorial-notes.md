@@ -1118,3 +1118,129 @@ Demo steps:
 ```bash
 git commit -m "phase-11 quality investigation workflow"
 ```
+
+## Phase 12: AI-Assisted Investigation Summary
+
+### Video Title:
+
+Build Evidence-Grounded AI Investigation Summaries
+
+### Goal of This Phase:
+
+Add AI-assisted investigation summary generation using only platform evidence from alerts, defects, sensor readings, station events, and investigation notes.
+
+Detailed guide: `docs/phase12.md`
+
+### What We Build:
+
+- `investigations.ai_summary` JSON persistence.
+- Alembic migration for the AI summary column.
+- AI provider interface.
+- Deterministic mock summary provider.
+- OpenAI-compatible provider placeholder.
+- Evidence gathering service for investigations.
+- `POST /api/v1/investigations/{id}/ai-summary`.
+- Frontend Generate AI Summary button.
+- AI Summary panel with likely issue, evidence, recommended checks, confidence, and limitations.
+- Backend guardrail tests.
+- Frontend AI summary panel tests.
+
+### Why This Matters for Manufacturing Quality:
+
+AI can help engineers organize evidence quickly, but it must not become an unsupported authority. Phase 12 keeps the summary grounded in platform records and always shows limitations so engineers know what evidence was missing.
+
+The mock provider keeps the project demoable without paid APIs or external keys.
+
+### Code Walkthrough:
+
+1. Confirm the backend lives in `backend/`.
+2. Add `ai_summary` to the investigation model and migration.
+3. Add typed AI summary schemas.
+4. Add provider interface and mock provider.
+5. Add evidence gathering from alert, defects, sensor readings, station events, and investigation notes.
+6. Add the AI summary endpoint.
+7. Save summary JSON on the investigation.
+8. Add the frontend API mutation.
+9. Add the AI Summary panel to Investigation Detail.
+10. Confirm no Phase 13 E2E tests are added.
+
+### Testing Walkthrough:
+
+Run backend tests:
+
+```powershell
+cd backend
+pytest
+```
+
+Explain tests for structured summary output, alert evidence, defect evidence, sensor evidence, limitations, no-hallucination guardrails, confidence levels, endpoint success, persistence, and no external network calls.
+
+Run frontend tests:
+
+```powershell
+cd frontend
+npm install
+npm run test
+```
+
+Explain tests for the generate button, mutation call, loading state, error state, displayed likely issue, evidence, next checks, confidence, limitations, and existing saved summary display.
+
+### Manual Demo:
+
+Start services:
+
+```powershell
+docker compose up postgres redpanda redpanda-console elasticsearch
+```
+
+Run backend setup:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+pytest
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Create alert and investigation data through the UI or existing APIs, then generate by API:
+
+```powershell
+curl -X POST http://localhost:8000/api/v1/investigations/REPLACE_WITH_INVESTIGATION_ID/ai-summary
+```
+
+Start frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173/investigations
+```
+
+Open an investigation detail page and click Generate AI Summary.
+
+### Common Errors:
+
+- No investigation exists: create one from an alert first.
+- Investigation has no linked alert: create investigations through the alert workflow when possible.
+- No `evidence_json` available: the summary will include limitations.
+- Summary appears too generic because evidence is thin: ingest or create more relevant defects, readings, and events.
+- AI summary not saved because `ai_summary` field is missing: run `alembic upgrade head`.
+- Migration needed for `ai_summary` column: run backend migrations.
+- Frontend mutation succeeds but page does not refresh: invalidate investigation detail queries after mutation.
+- Backend not running: start `python -m uvicorn app.main:app --reload --port 8000`.
+- CORS error: confirm `FRONTEND_ORIGIN=http://localhost:5173`.
+- Developer expected OpenAI API but project defaults to mock provider: set `AI_SUMMARY_PROVIDER=mock` for local demos.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-12 ai assisted investigation summaries"
+```

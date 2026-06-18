@@ -218,6 +218,46 @@ Allowed alert statuses:
 
 When an investigation is resolved, the backend sets `closed_at` and updates the related alert status to `resolved`.
 
+## Phase 12 AI Summary
+
+Generate and save an evidence-grounded AI-assisted summary:
+
+```text
+POST /api/v1/investigations/{id}/ai-summary
+```
+
+Request body is empty.
+
+Response:
+
+```json
+{
+  "investigation_id": 1,
+  "ai_summary": {
+    "likely_issue": "Repeated torque defects may indicate a possible torque tool calibration or process drift.",
+    "affected_station": "ST-TORQUE",
+    "affected_equipment": "EQ-TQ-01",
+    "evidence": [
+      "Alert REPEATED_DEFECT_STATION reported Repeated defects detected.",
+      "Related defects include TORQUE_LOW."
+    ],
+    "recommended_next_checks": [
+      "Verify torque tool calibration history and compare torque results across adjacent stations."
+    ],
+    "confidence": "medium",
+    "limitations": [
+      "The summary is based only on events and notes stored in the platform."
+    ]
+  }
+}
+```
+
+The generated summary is saved to `investigations.ai_summary`.
+
+If the investigation does not exist, the endpoint returns `404`.
+
+The default provider is `AI_SUMMARY_PROVIDER=mock`, so no external API key is required.
+
 ## Example Manual Checks
 
 ```powershell

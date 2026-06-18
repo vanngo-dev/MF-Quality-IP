@@ -7,11 +7,13 @@ import { LoadingState } from "../../components/ui/LoadingState";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { getAlertById, updateAlertStatus } from "../../services/alertsApi";
 import {
+  generateInvestigationAiSummary,
   getInvestigationById,
   updateInvestigation,
   updateInvestigationStatus,
 } from "../../services/investigationsApi";
 import { AlertStatusActions } from "../alerts/AlertStatusActions";
+import { AiSummaryPanel } from "./components/AiSummaryPanel";
 import { EvidencePanel } from "./components/EvidencePanel";
 import { InvestigationForm, type InvestigationFormValues } from "./components/InvestigationForm";
 import { InvestigationStatusActions } from "./components/InvestigationStatusActions";
@@ -54,6 +56,13 @@ export function InvestigationDetailPage() {
     onSuccess: (alert) => {
       void queryClient.invalidateQueries({ queryKey: ["alerts"] });
       void queryClient.invalidateQueries({ queryKey: ["alert", alert.id] });
+    },
+  });
+  const aiSummaryMutation = useMutation({
+    mutationFn: () => generateInvestigationAiSummary(numericInvestigationId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["investigation", numericInvestigationId] });
+      void queryClient.invalidateQueries({ queryKey: ["investigations"] });
     },
   });
 
@@ -103,10 +112,17 @@ export function InvestigationDetailPage() {
           </div>
           <div>
             <dt>AI Summary</dt>
-            <dd>{investigation.ai_summary ?? "AI summaries start in Phase 12."}</dd>
+            <dd>{investigation.ai_summary ? "Generated" : "Not generated yet"}</dd>
           </div>
         </dl>
       </section>
+
+      <AiSummaryPanel
+        isError={aiSummaryMutation.isError}
+        isGenerating={aiSummaryMutation.isPending}
+        onGenerate={() => aiSummaryMutation.mutate()}
+        summary={aiSummaryMutation.data?.ai_summary ?? investigation.ai_summary}
+      />
 
       <div className="workflow-grid">
         <EvidencePanel evidence={investigation.evidence_json} title="Investigation Evidence" />

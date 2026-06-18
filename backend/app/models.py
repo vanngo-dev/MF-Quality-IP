@@ -169,6 +169,7 @@ class Investigation(Base):
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     root_cause_hypothesis: Mapped[str | None] = mapped_column(Text, nullable=True)
     evidence_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict)
+    ai_summary: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -178,7 +179,3 @@ class Investigation(Base):
     @property
     def created_at(self) -> datetime:
         return self.opened_at
-
-    @property
-    def ai_summary(self) -> None:
-        return None

@@ -202,6 +202,39 @@ Frontend tests verify:
 
 Frontend workflow tests mock API responses. They do not require a running backend for normal automated runs.
 
+## Phase 12 AI Summary Coverage
+
+Backend tests verify:
+
+- Mock provider returns structured summary content.
+- Mock provider uses alert evidence.
+- Mock provider uses defect evidence.
+- Mock provider uses sensor evidence.
+- Missing evidence returns limitations.
+- Minimal evidence does not produce invented root-cause claims.
+- Confidence is low when evidence is thin.
+- Confidence is medium when multiple evidence sources agree.
+- Default provider is mock and does not require external network calls.
+- `POST /api/v1/investigations/{id}/ai-summary` succeeds.
+- Missing investigation returns `404`.
+- Summary is saved to the investigation.
+- `updated_at` changes after summary generation.
+
+Frontend tests verify:
+
+- Investigation detail page shows Generate AI Summary.
+- Clicking the button calls the AI summary mutation.
+- Loading state appears while generating.
+- AI Summary panel renders likely issue.
+- AI Summary panel renders evidence list.
+- AI Summary panel renders recommended next checks.
+- AI Summary panel renders confidence.
+- AI Summary panel renders limitations.
+- Error state appears if generation fails.
+- Existing saved `ai_summary` displays and can be regenerated.
+
+Tests use the mock provider and mocked frontend API responses. No OpenAI-compatible API key or external API call is required.
+
 ## Local Test Command
 
 Backend:
@@ -624,3 +657,53 @@ Expected workflow:
 - Confirm the related alert is resolved.
 
 See `docs/phase11.md` for the dedicated Phase 11 guide.
+
+## AI Summary Manual Verification
+
+Start services:
+
+```powershell
+docker compose up postgres redpanda redpanda-console elasticsearch
+```
+
+Run backend setup:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+pytest
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Generate a summary by API:
+
+```powershell
+curl -X POST http://localhost:8000/api/v1/investigations/REPLACE_WITH_INVESTIGATION_ID/ai-summary
+```
+
+Start frontend:
+
+```powershell
+cd frontend
+npm install
+npm run test
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173/investigations
+```
+
+Expected workflow:
+
+- Open an investigation detail page.
+- Click Generate AI Summary.
+- Confirm loading appears.
+- Confirm likely issue, evidence, next checks, confidence, and limitations appear.
+- Refresh the page and confirm the saved summary still appears.
+
+See `docs/phase12.md` for the dedicated Phase 12 guide.

@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.ai.schemas import AISummaryContent
+
 
 DefectSeverity = Literal["low", "medium", "high", "critical"]
 AlertSeverity = Literal["medium", "high", "critical"]
@@ -149,7 +151,7 @@ class InvestigationResponse(ORMResponse):
     summary: str | None
     root_cause_hypothesis: str | None
     evidence_json: dict[str, object]
-    ai_summary: str | None
+    ai_summary: AISummaryContent | None
     status: str
     created_at: datetime
     opened_at: datetime
