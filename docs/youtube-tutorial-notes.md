@@ -1547,3 +1547,125 @@ Open:
 ```bash
 git commit -m "phase-14 dockerized one command demo workflow"
 ```
+
+## Phase 15: GitHub Actions CI Pipeline
+
+### Video Title:
+
+Add GitHub Actions CI to a Full-Stack Manufacturing Quality Platform
+
+### Goal of This Phase:
+
+Add a professional CI pipeline that validates Docker Compose, backend tests, worker tests, event-generator tests, frontend tests, and frontend build on pushes and pull requests.
+
+Detailed guide: `docs/phase15.md`
+
+### What We Build:
+
+- `.github/workflows/ci.yml`.
+- Push and pull request triggers for `main` and `master`.
+- Docker Compose validation job.
+- Backend test job.
+- Worker test job.
+- Event-generator test job.
+- Frontend test and build job.
+- Mock AI provider defaults for CI.
+- README, testing strategy, and phase documentation updates.
+
+### Why This Matters for Manufacturing Quality:
+
+The project now has many parts that must keep working together: FastAPI, PostgreSQL models, worker ingestion, event generation, Elasticsearch search contracts, React UI, Docker Compose, and Playwright E2E. CI gives every future change a repeatable quality gate before it reaches a demo branch.
+
+### Code Walkthrough:
+
+1. Confirm the FastAPI backend lives in `backend/`, not `api/`.
+2. Inspect existing local Makefile commands from Phase 14.
+3. Inspect the old CI workflow.
+4. Add triggers for `main` and `master`.
+5. Add a Compose validation job.
+6. Add separate Python jobs for backend, worker, and event-generator tests.
+7. Add a Node job for frontend tests and build.
+8. Explain CI environment defaults, including `AI_SUMMARY_PROVIDER=mock`.
+9. Explain why Postgres, Redpanda, Elasticsearch, and paid AI services are not required for current CI tests.
+10. Explain why Playwright E2E remains local-only in Phase 15.
+
+### Testing Walkthrough:
+
+Run local checks that match CI:
+
+```powershell
+docker compose config
+docker compose --profile tools config
+```
+
+```powershell
+cd backend
+pip install -e .
+pytest
+```
+
+```powershell
+cd worker
+pip install -e .
+pytest
+```
+
+```powershell
+cd event-generator
+pip install -e .
+pytest
+```
+
+```powershell
+cd frontend
+npm ci
+npm run test:run
+npm run build
+```
+
+Explain that `make test` runs the non-E2E local suites, while `make test-e2e` stays separate because it requires running app services and Playwright browsers.
+
+### Manual Demo:
+
+Push a branch or open a pull request:
+
+```powershell
+git add .
+git commit -m "phase-15 github actions ci pipeline"
+git push
+```
+
+Open GitHub Actions and confirm the `CI` workflow jobs:
+
+- Docker Compose validation
+- Backend tests
+- Worker tests
+- Event generator tests
+- Frontend tests and build
+
+After CI passes, run the Phase 14 local demo:
+
+```powershell
+make demo
+```
+
+### Common Errors:
+
+- CI cannot find backend folder: check `working-directory: backend`.
+- `pip install -e .` fails: confirm the package folder has `pyproject.toml`.
+- Missing `pyproject.toml`: run install from the package folder, not repo root.
+- Postgres service not ready: current backend tests use SQLite fixtures and should not require Postgres.
+- `DATABASE_URL` wrong in CI: set job environment explicitly if a future test needs Postgres.
+- Elasticsearch not running: current search tests use mocked search services.
+- Kafka or Redpanda not available in CI: current worker and generator tests mock Kafka.
+- `npm ci` fails because `package-lock.json` is missing: this repo has `frontend/package-lock.json`; otherwise use `npm install`.
+- Frontend test script missing: confirm `npm run test:run` exists.
+- Playwright browsers not installed: E2E remains local-only in Phase 15.
+- E2E too flaky for CI: keep it out of required CI until orchestration is hardened.
+- CI badge owner/repo placeholder not updated: replace `REPLACE_OWNER/REPLACE_REPO` after pushing to GitHub.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-15 github actions ci pipeline"
+```

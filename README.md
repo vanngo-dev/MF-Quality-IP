@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 14 adds Docker Compose app services and one-command demo workflows on top of the Phase 1-13 platform:
+Phase 15 adds a GitHub Actions CI pipeline on top of the Phase 1-14 platform:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend dashboard connected to live API data with TanStack Query.
@@ -53,8 +53,9 @@ Phase 14 adds Docker Compose app services and one-command demo workflows on top 
 - Makefile commands for install, up, down, reset, migrate, seed, topics, demo data, tests, logs, status, and demo startup.
 - Fresh-clone `.env.example` values for host commands and Docker service-to-service URLs.
 - `make demo` wrapper plus staged `make demo-infra`, `make demo-data`, and `make demo-app` commands.
-- Backend and frontend automated tests.
-- GitHub Actions CI for backend and frontend checks.
+- GitHub Actions CI workflow for Docker Compose validation, backend tests, worker tests, event-generator tests, frontend tests, and frontend build.
+- CI-safe mock AI provider defaults with no paid API or secret requirements.
+- Local Makefile commands that mirror the CI test suites.
 - Documentation and YouTube tutorial notes.
 
 Detailed notes:
@@ -73,6 +74,7 @@ Detailed notes:
 - `docs/phase12.md`
 - `docs/phase13.md`
 - `docs/phase14.md`
+- `docs/phase15.md`
 - `docs/adr/0004-ai-investigation-summary.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
@@ -137,6 +139,37 @@ make reset
 ```
 
 `make reset` runs `docker compose down -v` and deletes local Docker volumes, including PostgreSQL demo data.
+
+## Continuous Integration
+
+GitHub Actions workflow:
+
+```text
+.github/workflows/ci.yml
+```
+
+CI runs on pushes and pull requests targeting `main` or `master`.
+
+Jobs:
+
+- Docker Compose validation with `docker compose config`.
+- Docker Compose tools profile validation with `docker compose --profile tools config`.
+- Backend tests from `backend/`.
+- Worker tests from `worker/`.
+- Event-generator tests from `event-generator/`.
+- Frontend tests and production build from `frontend/`.
+
+E2E tests remain local-only in Phase 15 because they require running backend and frontend services plus Playwright browser installation. Run them locally with:
+
+```powershell
+make test-e2e
+```
+
+CI badge placeholder to update after pushing to GitHub:
+
+```markdown
+![CI](https://github.com/REPLACE_OWNER/REPLACE_REPO/actions/workflows/ci.yml/badge.svg)
+```
 
 ## Backend
 
@@ -720,4 +753,4 @@ docker compose config
 make demo
 ```
 
-If Make is not installed, run the direct PowerShell fallback in `docs/phase14.md`. CI is intentionally not added in Phase 14; GitHub Actions work starts in Phase 15.
+If Make is not installed, run the direct PowerShell fallback in `docs/phase14.md`. GitHub Actions CI is covered separately in `docs/phase15.md`.

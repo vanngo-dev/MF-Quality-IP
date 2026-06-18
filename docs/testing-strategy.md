@@ -861,3 +861,82 @@ make test-e2e
 ```
 
 The direct PowerShell fallback for users without Make is documented in `docs/phase14.md`.
+
+## Phase 15 GitHub Actions CI Coverage
+
+Phase 15 adds `.github/workflows/ci.yml` so GitHub validates the project on pushes and pull requests targeting `main` or `master`.
+
+CI jobs:
+
+- Docker Compose validation: `docker compose config`.
+- Docker Compose tools profile validation: `docker compose --profile tools config`.
+- Backend tests: install `backend/` with `pip install -e .`, then run `pytest`.
+- Worker tests: install `worker/` with `pip install -e .`, then run `pytest`.
+- Event-generator tests: install `event-generator/` with `pip install -e .`, then run `pytest`.
+- Frontend tests and build: run `npm ci`, `npm run test:run`, and `npm run build`.
+
+CI uses safe defaults:
+
+```text
+AI_PROVIDER=mock
+AI_SUMMARY_PROVIDER=mock
+ELASTICSEARCH_URL=http://localhost:9200
+KAFKA_BOOTSTRAP_SERVERS=localhost:19092
+```
+
+Backend tests use SQLite test fixtures and mocked Elasticsearch search services where needed, so CI does not start PostgreSQL, Redpanda, or Elasticsearch containers. Worker and event-generator tests mock Kafka where appropriate and do not require a live broker.
+
+Local commands that match CI:
+
+```powershell
+docker compose config
+docker compose --profile tools config
+```
+
+```powershell
+cd backend
+pip install -e .
+pytest
+```
+
+```powershell
+cd worker
+pip install -e .
+pytest
+```
+
+```powershell
+cd event-generator
+pip install -e .
+pytest
+```
+
+```powershell
+cd frontend
+npm ci
+npm run test:run
+npm run build
+```
+
+Makefile shortcuts:
+
+```powershell
+make test
+docker compose config
+```
+
+Playwright E2E remains local-only in Phase 15 because it requires a running backend, frontend, seeded data, and browser installation:
+
+```powershell
+make test-e2e
+```
+
+Debugging guide:
+
+- Backend failure: run `cd backend`, `pip install -e .`, then `pytest`.
+- Worker failure: run `cd worker`, `pip install -e .`, then `pytest`.
+- Event-generator failure: run `cd event-generator`, `pip install -e .`, then `pytest`.
+- Frontend failure: run `cd frontend`, `npm ci`, `npm run test:run`, then `npm run build`.
+- Compose failure: run `docker compose config` locally and inspect YAML indentation, profiles, and environment values.
+
+See `docs/phase15.md` for the dedicated Phase 15 CI guide.
