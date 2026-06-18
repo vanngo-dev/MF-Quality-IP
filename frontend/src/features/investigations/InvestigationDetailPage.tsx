@@ -82,7 +82,7 @@ export function InvestigationDetailPage() {
   }
 
   return (
-    <section className="page-stack">
+    <section className="page-stack" data-testid="investigation-detail-page">
       <PageHeader title={investigation.title} description="Update engineering notes, status, and linked alert resolution." />
 
       <section className="detail-panel">

@@ -9,10 +9,16 @@ type AiSummaryPanelProps = {
 
 export function AiSummaryPanel({ isError = false, isGenerating = false, onGenerate, summary }: AiSummaryPanelProps) {
   return (
-    <section className="workflow-panel" aria-label="AI Summary">
+    <section className="workflow-panel" aria-label="AI Summary" data-testid="ai-summary-panel">
       <div className="workflow-panel-header">
         <h2>AI Summary</h2>
-        <button className="secondary-button compact" disabled={isGenerating} onClick={onGenerate} type="button">
+        <button
+          className="secondary-button compact"
+          data-testid="generate-ai-summary-button"
+          disabled={isGenerating}
+          onClick={onGenerate}
+          type="button"
+        >
           {summary ? "Regenerate AI Summary" : "Generate AI Summary"}
         </button>
       </div>

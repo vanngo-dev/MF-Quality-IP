@@ -1244,3 +1244,141 @@ Open an investigation detail page and click Generate AI Summary.
 ```bash
 git commit -m "phase-12 ai assisted investigation summaries"
 ```
+
+## Phase 13: End-to-End Testing
+
+### Video Title:
+
+Build Playwright End-to-End Tests for a Manufacturing Quality Workflow
+
+### Goal of This Phase:
+
+Add browser automation that proves the dashboard, alert workflow, investigation creation, AI summary generation, and investigation resolution work together against the running FastAPI backend and React frontend.
+
+Detailed guide: `docs/phase13.md`
+
+### What We Build:
+
+- `e2e/` Playwright project.
+- `manufacturing-quality-flow.spec.ts`.
+- API helper for backend health checks and alert fixture creation.
+- Test-data helper for deterministic manufacturing workflow payloads.
+- Stable frontend selectors for key dashboard, alert, investigation, AI summary, and resolution controls.
+- `make test-e2e` shortcut.
+- Documentation for automated E2E and manual full-system demos.
+
+### Why This Matters for Manufacturing Quality:
+
+Unit and integration tests prove important pieces work, but quality teams care about the complete path: an alert appears, an engineer opens it, creates an investigation, asks for an evidence-grounded summary, and resolves the issue. Playwright tests that story through the browser.
+
+### Code Walkthrough:
+
+1. Confirm the FastAPI backend lives in `backend/`.
+2. Add stable `data-testid` selectors where the workflow needs reliable anchors.
+3. Create the `e2e/` package with `@playwright/test`.
+4. Configure Playwright with `baseURL = http://localhost:5173`.
+5. Add API helpers for `E2E_API_URL=http://localhost:8000`.
+6. Create alert fixtures through the backend API.
+7. Drive the dashboard, alerts, alert detail, investigation form, AI summary panel, and resolution button.
+8. Explain why the automated test does not depend on Redpanda timing.
+9. Show the separate manual full-system demo with event-generator, Redpanda, worker, database, API, and UI.
+10. Confirm Phase 14 one-command demo orchestration is not added yet.
+
+### Testing Walkthrough:
+
+Start backend:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Start frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Run Playwright:
+
+```powershell
+cd e2e
+npm install
+npx playwright install
+npx playwright test
+```
+
+Explain that Playwright uses screenshots and videos on failure, and traces on retry. Show `e2e/test-results/` and `e2e/playwright-report/` after a failure.
+
+### Manual Demo:
+
+Start services:
+
+```powershell
+docker compose up postgres redpanda redpanda-console elasticsearch
+```
+
+Run backend setup and API:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Create topics:
+
+```powershell
+docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
+docker compose exec redpanda rpk topic list
+```
+
+Start worker:
+
+```powershell
+cd worker
+pip install -e .
+python -m app.main
+```
+
+Publish demo events:
+
+```powershell
+cd event-generator
+python -m app.main --mode defect-spike --publish --broker localhost:19092
+```
+
+Start frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173/alerts`, open an alert, create an investigation, generate an AI summary, and resolve the investigation.
+
+### Common Errors:
+
+- Backend not running: start `python -m uvicorn app.main:app --reload --port 8000` from `backend/`.
+- Frontend not running: start `npm run dev` from `frontend/`.
+- Playwright browsers missing: run `npx playwright install` from `e2e/`.
+- Database not seeded: run `alembic upgrade head` and `python -m app.db.seed` from `backend/`.
+- E2E cannot find alert data: confirm `POST /api/v1/alerts` succeeds and the frontend uses `VITE_API_BASE_URL=http://localhost:8000`.
+- Manual demo has no alerts: run the worker and publish `defect-spike` events.
+- Redpanda topic missing: create topics with `rpk topic create`.
+- Duplicate active investigation: use the API-created fixture flow or resolve the existing investigation.
+- Failed test needs debugging: inspect `e2e/test-results/` artifacts and the HTML report.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-13 end to end manufacturing quality workflow tests"
+```

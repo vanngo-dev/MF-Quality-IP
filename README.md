@@ -4,7 +4,7 @@ Full-stack portfolio project for manufacturing quality workflows, event-driven i
 
 ## Current Phase
 
-Phase 12 adds evidence-grounded AI-assisted investigation summaries on top of the Phase 1-11 platform:
+Phase 13 adds Playwright end-to-end coverage for the manufacturing quality workflow on top of the Phase 1-12 platform:
 
 - FastAPI backend with a health contract.
 - React + TypeScript + Vite frontend dashboard connected to live API data with TanStack Query.
@@ -44,6 +44,10 @@ Phase 12 adds evidence-grounded AI-assisted investigation summaries on top of th
 - Evidence-grounded investigation summary endpoint.
 - Persisted structured `ai_summary` JSON on investigations.
 - Frontend Generate AI Summary action and summary panel.
+- Playwright E2E tests for dashboard, alerts, investigation creation, AI summary generation, and resolution.
+- API-created E2E fixtures for reliable browser workflow tests.
+- Stable frontend `data-testid` selectors for critical quality workflow controls.
+- Root `make test-e2e` shortcut and direct Windows Playwright commands.
 - Backend and frontend automated tests.
 - GitHub Actions CI for backend and frontend checks.
 - Documentation and YouTube tutorial notes.
@@ -62,6 +66,7 @@ Detailed notes:
 - `docs/phase10.md`
 - `docs/phase11.md`
 - `docs/phase12.md`
+- `docs/phase13.md`
 - `docs/adr/0004-ai-investigation-summary.md`
 - `docs/architecture.md`
 - `docs/event-contracts.md`
@@ -76,6 +81,7 @@ backend/              FastAPI application and backend tests
 event-generator/      Standalone simulated manufacturing event generator
 worker/               Kafka consumer worker for event persistence
 frontend/             React, TypeScript, and Vite application
+e2e/                  Playwright end-to-end browser tests
 docs/                 Phase notes and tutorial notes
 .github/workflows/    GitHub Actions CI
 docker-compose.yml    Local platform services
@@ -128,6 +134,45 @@ Frontend app:
 - http://localhost:5173
 
 Phase 10 uses live backend API data and search endpoints. Start the backend on port 8000 for the browser demo. Frontend tests mock API responses, so the backend does not need to be running for automated frontend tests.
+
+## End-to-End Tests
+
+Phase 13 adds Playwright tests under `e2e/`. The automated E2E test expects the backend and frontend to already be running:
+
+```powershell
+cd backend
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Then run Playwright:
+
+```powershell
+cd e2e
+npm install
+npx playwright install
+npx playwright test
+```
+
+Optional environment overrides:
+
+```text
+E2E_FRONTEND_URL=http://localhost:5173
+E2E_API_URL=http://localhost:8000
+```
+
+Makefile shortcut:
+
+```powershell
+make test-e2e
+```
+
+The automated E2E flow creates alert fixtures through the FastAPI API before opening the browser. This is more stable than depending on whatever data is already in a local database. The manual full-system demo can still use the event generator, Redpanda, worker, PostgreSQL, backend API, and frontend UI together.
 
 ## Local Services
 
@@ -195,6 +240,21 @@ Frontend:
 cd frontend
 npm run test
 npm run build
+```
+
+End-to-end:
+
+```powershell
+cd e2e
+npm install
+npx playwright install
+npx playwright test
+```
+
+Or:
+
+```powershell
+make test-e2e
 ```
 
 Docker Compose syntax:
@@ -536,3 +596,15 @@ http://localhost:5173/investigations
 ```
 
 Open an investigation and click Generate AI Summary.
+
+## End-to-End Manufacturing Quality Workflow
+
+Phase 13 verifies the complete browser workflow:
+
+```text
+Dashboard -> Alerts -> Alert detail -> Create investigation -> Investigation detail -> Generate AI Summary -> Resolve investigation
+```
+
+Automated Playwright tests use stable selectors such as `dashboard-page`, `alerts-page`, `alert-row`, `alert-detail-page`, `investigation-form`, `generate-ai-summary-button`, `ai-summary-panel`, and `resolve-investigation-button`.
+
+Manual full-system verification can still start Redpanda, run the worker, publish defect-spike events, and confirm alerts flow from stream ingestion into the UI before creating and resolving an investigation.

@@ -46,7 +46,7 @@ export function AlertsPage() {
   const equipment = equipmentQuery.data ?? [];
 
   return (
-    <section className="page-stack">
+    <section className="page-stack" data-testid="alerts-page">
       <PageHeader title="Alerts" description="Live alert queue with filters and acknowledgement actions." />
       <div className="filter-row">
         <label>
@@ -110,6 +110,7 @@ export function AlertsPage() {
             ),
           },
         ]}
+        getRowTestId={() => "alert-row"}
         rows={filteredAlerts}
       />
     </section>

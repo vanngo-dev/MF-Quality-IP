@@ -9,10 +9,11 @@ export type DataTableColumn<Row> = {
 type DataTableProps<Row> = {
   caption: string;
   columns: DataTableColumn<Row>[];
+  getRowTestId?: (row: Row) => string | undefined;
   rows: Row[];
 };
 
-export function DataTable<Row>({ caption, columns, rows }: DataTableProps<Row>) {
+export function DataTable<Row>({ caption, columns, getRowTestId, rows }: DataTableProps<Row>) {
   return (
     <div className="table-panel">
       <table className="data-table">
@@ -28,7 +29,7 @@ export function DataTable<Row>({ caption, columns, rows }: DataTableProps<Row>) 
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => (
-            <tr key={rowIndex}>
+            <tr data-testid={getRowTestId?.(row)} key={rowIndex}>
               {columns.map((column) => (
                 <td key={column.key}>{column.render(row)}</td>
               ))}

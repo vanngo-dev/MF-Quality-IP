@@ -40,7 +40,7 @@ export function DashboardPage() {
   const recentAlerts = alerts.slice(0, 5);
 
   return (
-    <section className="page-stack">
+    <section className="page-stack" data-testid="dashboard-page">
       <PageHeader
         title="Dashboard"
         description="Live manufacturing quality summary from the FastAPI backend."

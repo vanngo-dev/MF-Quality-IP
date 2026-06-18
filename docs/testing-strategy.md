@@ -235,6 +235,25 @@ Frontend tests verify:
 
 Tests use the mock provider and mocked frontend API responses. No OpenAI-compatible API key or external API call is required.
 
+## Phase 13 End-to-End Coverage
+
+Phase 13 adds Playwright browser coverage for the complete manufacturing quality workflow. Unit tests still verify small functions and components in isolation. Integration tests still verify backend API behavior and frontend API calls with mocked responses. E2E tests verify that the running backend and running frontend work together through the same UI path a quality engineer would use.
+
+Playwright E2E tests verify:
+
+- Playwright configuration loads with the expected frontend base URL.
+- The browser can reach the frontend at `http://localhost:5173`.
+- The Playwright API client can reach backend health at `http://localhost:8000/health`.
+- API-created alert fixtures appear in the Alerts page.
+- Alert detail pages load.
+- Investigation creation from an alert works.
+- Investigation detail pages load after creation.
+- AI summary generation works.
+- The summary panel shows likely issue, evidence, recommended next checks, confidence, and limitations.
+- Investigation resolution works and the resolved status appears.
+
+The E2E suite creates fixture alerts through the FastAPI API before driving the browser. API-created fixtures are stable because they do not depend on previous local demo runs, Redpanda timing, worker timing, or whatever records happen to exist in PostgreSQL. The manual demo still uses the full event-generator to Redpanda to worker to database to UI flow.
+
 ## Local Test Command
 
 Backend:
@@ -267,6 +286,28 @@ cd frontend
 npm install
 npm run test
 npm run build
+```
+
+End-to-end:
+
+```powershell
+cd e2e
+npm install
+npx playwright install
+npx playwright test
+```
+
+Makefile shortcut:
+
+```powershell
+make test-e2e
+```
+
+E2E environment defaults:
+
+```text
+E2E_FRONTEND_URL=http://localhost:5173
+E2E_API_URL=http://localhost:8000
 ```
 
 If editable install is not available:
@@ -707,3 +748,63 @@ Expected workflow:
 - Refresh the page and confirm the saved summary still appears.
 
 See `docs/phase12.md` for the dedicated Phase 12 guide.
+
+## End-to-End Manual Verification
+
+Automated E2E verification expects the backend and frontend to be running. Start the API:
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Start the frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Run Playwright:
+
+```powershell
+cd e2e
+npm install
+npx playwright install
+npx playwright test
+```
+
+Manual full-system demo:
+
+```powershell
+docker compose up postgres redpanda redpanda-console elasticsearch
+```
+
+```powershell
+cd backend
+pip install -e .
+alembic upgrade head
+python -m app.db.seed
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+```powershell
+cd worker
+pip install -e .
+python -m app.main
+```
+
+```powershell
+cd event-generator
+python -m app.main --mode defect-spike --publish --broker localhost:19092
+```
+
+Then open `http://localhost:5173/alerts`, create an investigation from an alert, generate the AI summary, and resolve the investigation.
+
+Playwright stores screenshots, traces, and videos for failed or retried tests under `e2e/test-results/`. The HTML report is written to `e2e/playwright-report/`.
+
+See `docs/phase13.md` for the dedicated Phase 13 guide.

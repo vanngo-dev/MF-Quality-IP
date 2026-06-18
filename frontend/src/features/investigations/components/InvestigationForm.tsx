@@ -42,7 +42,7 @@ export function InvestigationForm({
   }
 
   return (
-    <form className="workflow-form" onSubmit={handleSubmit}>
+    <form className="workflow-form" data-testid="investigation-form" onSubmit={handleSubmit}>
       <label>
         Title
         <input
@@ -69,14 +69,18 @@ export function InvestigationForm({
       </label>
       <label>
         Status
-        <select value={values.status} onChange={(event) => updateField("status", event.target.value)}>
+        <select
+          data-testid="investigation-status-select"
+          value={values.status}
+          onChange={(event) => updateField("status", event.target.value)}
+        >
           <option value="draft">Draft</option>
           <option value="active">Active</option>
           <option value="waiting_on_data">Waiting on Data</option>
           <option value="resolved">Resolved</option>
         </select>
       </label>
-      <button className="secondary-button" type="submit" disabled={isSaving}>
+      <button className="secondary-button" data-testid="save-investigation-button" type="submit" disabled={isSaving}>
         {submitLabel}
       </button>
     </form>

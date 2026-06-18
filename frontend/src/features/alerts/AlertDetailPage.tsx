@@ -80,7 +80,7 @@ export function AlertDetailPage() {
   const equipment = equipmentQuery.data ?? [];
 
   return (
-    <section className="page-stack">
+    <section className="page-stack" data-testid="alert-detail-page">
       <PageHeader title={alert.title} description="Review alert evidence and open an engineering investigation." />
 
       <section className="detail-panel">
@@ -132,7 +132,12 @@ export function AlertDetailPage() {
         <section className="workflow-panel" aria-label="Create investigation">
           <div className="workflow-panel-header">
             <h2>Create Investigation</h2>
-            <button className="secondary-button compact" type="button" onClick={() => setIsFormOpen((value) => !value)}>
+            <button
+              className="secondary-button compact"
+              data-testid="create-investigation-button"
+              type="button"
+              onClick={() => setIsFormOpen((value) => !value)}
+            >
               {isFormOpen ? "Close Form" : "Create Investigation"}
             </button>
           </div>

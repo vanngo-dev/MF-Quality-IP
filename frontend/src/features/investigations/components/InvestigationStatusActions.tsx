@@ -22,6 +22,7 @@ export function InvestigationStatusActions({
         {statuses.map((item) => (
           <button
             className="secondary-button compact"
+            data-testid={item.value === "resolved" ? "resolve-investigation-button" : undefined}
             disabled={isSaving || status === item.value}
             key={item.value}
             onClick={() => onStatusChange(item.value)}
