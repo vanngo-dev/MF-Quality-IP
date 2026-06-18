@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -24,12 +26,24 @@ def generate_and_save_investigation_summary(
     summary = active_provider.generate(context)
 
     investigation.ai_summary = summary.model_dump()
-    investigation.updated_at = utc_now()
+    investigation.updated_at = _next_updated_at(investigation.updated_at)
     session.add(investigation)
     session.commit()
     session.refresh(investigation)
 
     return summary
+
+
+def _next_updated_at(previous: datetime | None) -> datetime:
+    current = utc_now()
+
+    if previous is None:
+        return current
+
+    if current.replace(tzinfo=None) <= previous.replace(tzinfo=None):
+        return previous + timedelta(microseconds=1)
+
+    return current
 
 
 def build_investigation_evidence_context(

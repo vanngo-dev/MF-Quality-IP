@@ -1669,3 +1669,137 @@ make demo
 ```bash
 git commit -m "phase-15 github actions ci pipeline"
 ```
+
+## Phase 16: Portfolio Polish and Interview Readiness
+
+### Title:
+
+Building a Manufacturing Quality Data Platform with React, FastAPI, Redpanda, PostgreSQL, Elasticsearch, and AI
+
+### Goal of This Phase:
+
+Turn the finished project into a recruiter-ready, interviewer-ready, and portfolio-ready artifact without adding major new product features.
+
+Detailed guide: `docs/phase16.md`
+
+### What We Build:
+
+- Portfolio-ready README.
+- `docs/interview-guide.md`.
+- `docs/phase16.md`.
+- Final architecture summary.
+- Final testing verification notes.
+- Resume bullets.
+- Interview talking points.
+- Demo walkthrough.
+- Honest known limitations and future improvements.
+
+### Why This Matters for Manufacturing Quality:
+
+The project now demonstrates the full shape of an internal manufacturing quality platform: simulated factory data, event streaming, persistence, alerting, investigation workflows, search, AI-assisted summaries, testing, Docker Compose, and CI. Phase 16 makes that story easy to communicate in a resume screen, recruiter conversation, and technical interview.
+
+### Video Chapters:
+
+1. Why I built this project
+2. Architecture overview
+3. Manufacturing data model
+4. Event streaming with Redpanda
+5. Worker consumers and event persistence
+6. Rule-based quality alerts
+7. Backend APIs with FastAPI
+8. React quality dashboard
+9. Elasticsearch investigation search
+10. Investigation workflow
+11. AI-assisted root-cause summary
+12. Testing strategy
+13. Docker Compose demo
+14. GitHub Actions CI
+15. How this maps to manufacturing quality engineering roles
+
+### Code Walkthrough:
+
+1. Start with the README overview and role alignment section.
+2. Show the architecture diagram.
+3. Walk through `event-generator/`, `worker/`, `backend/`, `frontend/`, and `e2e/`.
+4. Explain PostgreSQL as the source of truth and Elasticsearch as a search index.
+5. Show the alert-to-investigation-to-AI-summary workflow.
+6. Show Docker Compose and Makefile commands.
+7. Show GitHub Actions CI.
+8. Open `docs/interview-guide.md` and explain how to pitch the project.
+
+### Testing Walkthrough:
+
+Run:
+
+```powershell
+docker compose config
+docker compose --profile tools config
+```
+
+```powershell
+cd backend
+pytest
+```
+
+```powershell
+cd worker
+pytest
+```
+
+```powershell
+cd event-generator
+pytest
+```
+
+```powershell
+cd frontend
+npm run test:run
+npm run build
+```
+
+Run E2E only after backend and frontend are started:
+
+```powershell
+cd e2e
+npx playwright test
+```
+
+### Manual Demo:
+
+```powershell
+copy .env.example .env
+docker compose config
+make demo
+```
+
+Demo steps:
+
+1. Open dashboard.
+2. Show seeded manufacturing data.
+3. Produce defect spike if needed.
+4. Open alert queue.
+5. Open an alert.
+6. Create investigation.
+7. Generate AI summary.
+8. Search for `torque`.
+9. Resolve investigation.
+10. Show CI workflow file.
+
+### Common Errors:
+
+- README claims feature exists but feature is not implemented: remove or qualify the claim.
+- Screenshots missing: use placeholders until real screenshots are captured.
+- CI badge owner/repo not updated: replace `REPLACE_OWNER/REPLACE_REPO`.
+- Demo command not working from fresh clone: copy `.env.example` to `.env`, validate Compose, and retry.
+- Make not installed on Windows: use the direct PowerShell commands.
+- Docker Desktop not running: start Docker Desktop.
+- E2E tests require services not started: start backend and frontend.
+- AI summary expected real OpenAI but project uses mock provider: use `AI_SUMMARY_PROVIDER=mock`.
+- Elasticsearch has no results because reindex was not run: run `make reindex-search`.
+- Redpanda has no messages because event generator was not run: run `make produce-defect-spike`.
+
+### Git Commit:
+
+```bash
+git commit -m "phase-16 portfolio polish and interview documentation"
+```

@@ -1,119 +1,212 @@
 # Manufacturing Quality Intelligence Platform
 
-Full-stack portfolio project for manufacturing quality workflows, event-driven ingestion, investigation summaries, and operational dashboards.
+A full-stack manufacturing quality intelligence platform that simulates factory station events, equipment sensor readings, vehicle quality defects, rule-based quality alerts, investigation workflows, Elasticsearch search, and AI-assisted investigation summaries.
 
-## Current Phase
+This is a portfolio simulation, not a production factory integration. It is designed to show manufacturing quality data engineering, event-driven ingestion, internal tooling, API design, search, testing, CI, and Dockerized local development.
 
-Phase 15 adds a GitHub Actions CI pipeline on top of the Phase 1-14 platform:
+## Project Overview
 
-- FastAPI backend with a health contract.
-- React + TypeScript + Vite frontend dashboard connected to live API data with TanStack Query.
-- PostgreSQL, Redpanda, and Elasticsearch local services through Docker Compose.
-- SQLAlchemy ORM models for plants, production lines, stations, equipment, vehicles, events, readings, defects, alerts, and investigations.
-- Alembic migration for the initial domain schema.
-- Seed data for local demos and tests.
-- Read-only `/api/v1` endpoints for the manufacturing domain.
-- Defect, quality alert, and investigation REST APIs.
-- Business validation for workflow severity, status, and foreign-key references.
-- Python event generator for station, sensor reading, inspection, and defect events.
-- Deterministic and random JSON event output for tests, demos, and future streaming.
-- Kafka-compatible producer support for publishing generated events to Redpanda.
-- Streaming topics for station events, sensor readings, defects, alerts, and investigations.
-- Separate Python worker that consumes `station.events`, `sensor.readings`, and `quality.defects`.
-- Idempotent event persistence into `production_events`, `sensor_readings`, and `defects`.
-- Invalid event logging with a dead-letter placeholder.
-- Rule-based alert engine for repeated defects, sensor threshold breaches, defect spikes, and inspection failures.
-- Alert persistence into `quality_alerts`.
-- Alert publishing to the `quality.alerts` Redpanda topic.
-- React Router routes for dashboard, stations, equipment, vehicles, defects, alerts, and investigations.
-- Reusable frontend layout and UI components.
-- API client functions for health, stations, equipment, vehicles, defects, alerts, and investigations.
-- Live dashboard metrics for vehicles, open defects, open alerts, critical alerts, and top defect station.
-- Frontend tables for stations, equipment, vehicles, defects, alerts, and investigations populated from backend APIs.
-- VIN search and selected vehicle details.
-- Client-side defect and alert filters.
-- Alert acknowledgement through `PATCH /api/v1/alerts/{id}/status`.
-- Elasticsearch search indexes for defects, alerts, investigations, and event summaries.
-- Backend search endpoints for grouped and specialized search results.
-- Reindex command for rebuilding search documents from PostgreSQL.
-- Frontend `/search` page with grouped results for defects, alerts, investigations, and events.
-- Alert detail page for reviewing alert evidence and opening investigations.
-- Investigation detail page for editing summaries, root-cause hypotheses, and statuses.
-- Investigation workflow actions for acknowledging alerts, creating investigations, resolving investigations, and resolving related alerts.
-- Mock-first AI summary provider that works without paid external APIs.
-- Evidence-grounded investigation summary endpoint.
-- Persisted structured `ai_summary` JSON on investigations.
-- Frontend Generate AI Summary action and summary panel.
-- Playwright E2E tests for dashboard, alerts, investigation creation, AI summary generation, and resolution.
-- API-created E2E fixtures for reliable browser workflow tests.
-- Stable frontend `data-testid` selectors for critical quality workflow controls.
-- Root `make test-e2e` shortcut and direct Windows Playwright commands.
-- Dockerfiles for backend, worker, event generator, and frontend services.
-- Docker Compose services for the full local stack: PostgreSQL, Redpanda, Redpanda Console, Elasticsearch, backend, worker, event generator, and frontend.
-- Makefile commands for install, up, down, reset, migrate, seed, topics, demo data, tests, logs, status, and demo startup.
-- Fresh-clone `.env.example` values for host commands and Docker service-to-service URLs.
-- `make demo` wrapper plus staged `make demo-infra`, `make demo-data`, and `make demo-app` commands.
-- GitHub Actions CI workflow for Docker Compose validation, backend tests, worker tests, event-generator tests, frontend tests, and frontend build.
-- CI-safe mock AI provider defaults with no paid API or secret requirements.
-- Local Makefile commands that mirror the CI test suites.
-- Documentation and YouTube tutorial notes.
+The platform models a realistic internal quality workflow:
 
-Detailed notes:
+1. Seed a manufacturing plant with production lines, stations, equipment, and vehicles.
+2. Generate station events, sensor readings, inspection results, and defects.
+3. Publish events to Redpanda Kafka-compatible topics.
+4. Run a Python worker that consumes events, persists data, and applies quality rules.
+5. Create quality alerts when defect spikes or abnormal readings are detected.
+6. Expose manufacturing records through a FastAPI backend.
+7. Display operational data in a React dashboard.
+8. Search historical defects, alerts, investigations, and event summaries with Elasticsearch.
+9. Create investigations from alerts.
+10. Generate evidence-grounded AI investigation summaries with a local mock provider.
 
-- `docs/phase-01-foundation.md`
-- `docs/phase-02-postgres-domain-models.md`
-- `docs/phase-03-quality-workflow-apis.md`
-- `docs/phase-04-simulated-event-generator.md`
-- `docs/phase-05-redpanda-event-streaming.md`
-- `docs/phase6.md`
-- `docs/phase7.md`
-- `docs/phase8.md`
-- `docs/phase9.md`
-- `docs/phase10.md`
-- `docs/phase11.md`
-- `docs/phase12.md`
-- `docs/phase13.md`
-- `docs/phase14.md`
-- `docs/phase15.md`
-- `docs/adr/0004-ai-investigation-summary.md`
-- `docs/architecture.md`
-- `docs/event-contracts.md`
-- `docs/data-model.md`
-- `docs/api-contracts.md`
-- `docs/testing-strategy.md`
+## Why This Project Matters
+
+Manufacturing quality teams need more than raw defect records. They need a way to connect station activity, equipment readings, vehicle context, alerts, investigations, and historical search into one operational workflow.
+
+This project demonstrates how to build that kind of platform as a data product:
+
+- event-driven ingestion for factory signals;
+- durable PostgreSQL records for manufacturing state;
+- deterministic rules for explainable quality alerts;
+- search for investigation history;
+- frontend workflows for quality engineers;
+- mock AI assistance constrained to real evidence;
+- tests, Docker Compose, and CI for repeatable engineering practice.
+
+## Tesla / Manufacturing Quality Role Alignment
+
+This project maps directly to manufacturing quality and factory data platform work:
+
+- Manufacturing quality data engineering.
+- Full-stack internal tools for engineers and operators.
+- Factory data platform thinking.
+- Event-driven ingestion.
+- Data modeling for plants, lines, stations, equipment, vehicles, defects, alerts, and investigations.
+- API design with FastAPI and typed schemas.
+- React dashboard development for operational workflows.
+- Search workflows for quality investigations.
+- Testing strategy across backend, worker, event generator, frontend, and E2E.
+- GitHub Actions CI.
+- Dockerized local development.
+- AI-assisted engineering workflows with explicit limitations.
+
+## Architecture
+
+Text architecture:
+
+```text
+event-generator
+   |
+   v
+Redpanda topics
+   |
+   v
+worker consumers
+   |
+   v
+PostgreSQL <---- FastAPI backend ----> React frontend
+   |
+   v
+Elasticsearch search index
+
+Investigation workflow:
+QualityAlert -> Investigation -> AI Summary
+```
+
+Mermaid architecture:
+
+```mermaid
+flowchart LR
+  EG[Event Generator] --> RP[Redpanda Topics]
+  RP --> W[Worker Consumers]
+  W --> DB[(PostgreSQL)]
+  DB --> API[FastAPI Backend]
+  API --> FE[React Frontend]
+  DB --> ES[(Elasticsearch)]
+  API --> ES
+  QA[Quality Alert] --> INV[Investigation]
+  INV --> AI[Mock AI Summary Provider]
+```
+
+The FastAPI backend lives in `backend/`. This project does not use an `api/` folder.
+
+## Tech Stack
+
+Frontend:
+
+- React
+- TypeScript
+- Vite
+- TanStack Query
+- React Router
+- Vitest
+- React Testing Library
+- Playwright
+
+Backend:
+
+- Python
+- FastAPI
+- Pydantic
+- SQLAlchemy
+- Alembic
+- Pytest
+
+Data:
+
+- PostgreSQL
+- Elasticsearch
+
+Streaming:
+
+- Redpanda / Kafka-compatible topics
+
+Worker:
+
+- Python consumer service
+- Rule engine
+- Event persistence
+
+DevOps:
+
+- Docker Compose
+- GitHub Actions CI
+- Makefile
+
+## Feature Walkthrough
+
+1. Seed manufacturing plant, production lines, stations, equipment, and vehicles.
+2. Generate station and sensor events.
+3. Publish events to Redpanda.
+4. Worker consumes and persists events.
+5. Rule engine detects defect spikes and abnormal readings.
+6. Quality alerts are created.
+7. Frontend dashboard shows defects and alerts.
+8. Engineers create investigations from alerts.
+9. Elasticsearch supports historical search.
+10. Mock AI provider generates evidence-grounded investigation summaries.
 
 ## Repository Structure
 
 ```text
-backend/              FastAPI application and backend tests
-event-generator/      Standalone simulated manufacturing event generator
-worker/               Kafka consumer worker for event persistence
+backend/              FastAPI application, SQLAlchemy models, Alembic migrations, backend tests
+worker/               Python Redpanda/Kafka consumer and rule engine
+event-generator/      Simulated manufacturing event generator
 frontend/             React, TypeScript, and Vite application
-e2e/                  Playwright end-to-end browser tests
-docs/                 Phase notes and tutorial notes
+e2e/                  Playwright end-to-end workflow tests
+docs/                 Architecture, phase notes, testing docs, and interview guide
 .github/workflows/    GitHub Actions CI
 docker-compose.yml    Local platform services
 Makefile              Local developer and demo commands
 ```
 
-The FastAPI backend lives in `backend/`. This project does not use an `api/` folder.
+## Local Setup
 
-## Prerequisites
+Prerequisites:
 
 - Python 3.12+
 - Node.js 20+
 - Docker Desktop
-- Make for the one-command workflow, or PowerShell terminals for the fallback workflow
+- Make, or separate PowerShell terminals for the fallback commands
 
-## Fresh Clone Demo
+Fresh clone:
 
 ```powershell
 git clone REPLACE_WITH_REPO_URL
 cd manufacturing-quality-intelligence-platform
 copy .env.example .env
 docker compose config
+```
+
+Install local dependencies if running without Docker:
+
+```powershell
+cd backend
+pip install -e .
+```
+
+```powershell
+cd worker
+pip install -e .
+```
+
+```powershell
+cd event-generator
+pip install -e .
+```
+
+```powershell
+cd frontend
+npm install
+```
+
+## One-Command Demo
+
+```powershell
 make demo
 ```
+
+This starts infrastructure, runs migrations, seeds the database, creates Redpanda topics, produces defect-spike demo events, and starts backend, worker, and frontend services.
 
 Open:
 
@@ -122,359 +215,25 @@ Open:
 - Redpanda Console: http://localhost:8080
 - Elasticsearch: http://localhost:9200
 
-`make demo` starts infrastructure, runs migrations, seeds data, creates Redpanda topics, publishes a defect-spike demo event set, and starts backend, worker, and frontend services. If Make is not available on Windows, use the PowerShell fallback commands in `docs/phase14.md`.
-
-Staged demo commands:
-
-```powershell
-make demo-infra
-make demo-data
-make demo-app
-```
-
-Reset local Docker state:
+Reset local Docker data:
 
 ```powershell
 make reset
 ```
 
-`make reset` runs `docker compose down -v` and deletes local Docker volumes, including PostgreSQL demo data.
+`make reset` deletes local Docker volumes, including PostgreSQL demo data.
 
-## Continuous Integration
+## PowerShell Manual Setup
 
-GitHub Actions workflow:
+Use this path if Make is not installed on Windows.
 
-```text
-.github/workflows/ci.yml
-```
-
-CI runs on pushes and pull requests targeting `main` or `master`.
-
-Jobs:
-
-- Docker Compose validation with `docker compose config`.
-- Docker Compose tools profile validation with `docker compose --profile tools config`.
-- Backend tests from `backend/`.
-- Worker tests from `worker/`.
-- Event-generator tests from `event-generator/`.
-- Frontend tests and production build from `frontend/`.
-
-E2E tests remain local-only in Phase 15 because they require running backend and frontend services plus Playwright browser installation. Run them locally with:
+Start infrastructure:
 
 ```powershell
-make test-e2e
+docker compose up postgres redpanda redpanda-console elasticsearch
 ```
 
-CI badge placeholder to update after pushing to GitHub:
-
-```markdown
-![CI](https://github.com/REPLACE_OWNER/REPLACE_REPO/actions/workflows/ci.yml/badge.svg)
-```
-
-## Backend
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
-cd backend
-pip install -e .
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-Backend API:
-
-- Health: http://localhost:8000/health
-- Docs: http://localhost:8000/docs
-- Plants: http://localhost:8000/api/v1/plants
-- Lines: http://localhost:8000/api/v1/lines
-- Stations: http://localhost:8000/api/v1/stations
-- Equipment: http://localhost:8000/api/v1/equipment
-- Vehicles: http://localhost:8000/api/v1/vehicles
-- Defects: http://localhost:8000/api/v1/defects
-- Alerts: http://localhost:8000/api/v1/alerts
-- Investigations: http://localhost:8000/api/v1/investigations
-- Search: http://localhost:8000/api/v1/search?q=torque
-- AI Summary: http://localhost:8000/api/v1/investigations/1/ai-summary
-
-## Frontend
-
-```powershell
-cd frontend
-npm install
-npm run test
-npm run dev
-```
-
-Frontend app:
-
-- http://localhost:5173
-
-Phase 10 uses live backend API data and search endpoints. Start the backend on port 8000 for the browser demo. Frontend tests mock API responses, so the backend does not need to be running for automated frontend tests.
-
-## End-to-End Tests
-
-Phase 13 adds Playwright tests under `e2e/`. The automated E2E test expects the backend and frontend to already be running:
-
-```powershell
-cd backend
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-Then run Playwright:
-
-```powershell
-cd e2e
-npm install
-npx playwright install
-npx playwright test
-```
-
-Optional environment overrides:
-
-```text
-E2E_FRONTEND_URL=http://localhost:5173
-E2E_API_URL=http://localhost:8000
-```
-
-Makefile shortcut:
-
-```powershell
-make test-e2e
-```
-
-The automated E2E flow creates alert fixtures through the FastAPI API before opening the browser. This is more stable than depending on whatever data is already in a local database. The manual full-system demo can still use the event generator, Redpanda, worker, PostgreSQL, backend API, and frontend UI together.
-
-## Local Services
-
-```powershell
-docker compose up -d postgres redpanda elasticsearch
-```
-
-Services:
-
-- PostgreSQL: localhost:5432
-- Redpanda broker: localhost:19092
-- Redpanda Console: http://localhost:8080
-- Elasticsearch: http://localhost:9200
-- Backend API: http://localhost:8000
-- Frontend: http://localhost:5173
-
-Docker service-to-service URLs differ from host URLs:
-
-```text
-Host machine:
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/manufacturing_quality
-KAFKA_BOOTSTRAP_SERVERS=localhost:19092
-ELASTICSEARCH_URL=http://localhost:9200
-
-Inside Docker:
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/manufacturing_quality
-KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
-ELASTICSEARCH_URL=http://elasticsearch:9200
-```
-
-## Database Setup
-
-```powershell
-docker compose up postgres
-cd backend
-pip install -e .
-alembic upgrade head
-python -m app.db.seed
-```
-
-If editable install is not available in your environment, install the backend dependencies directly:
-
-```powershell
-pip install fastapi "uvicorn[standard]" pytest httpx pydantic-settings sqlalchemy alembic psycopg2-binary elasticsearch
-```
-
-The seed command creates:
-
-- 1 plant
-- 2 production lines
-- 6 stations
-- 8 equipment records
-- 10 vehicles
-
-## Makefile Commands
-
-```powershell
-make install
-make up
-make down
-make reset
-make migrate
-make seed
-make create-topics
-make produce-demo-events
-make produce-defect-spike
-make test
-make test-api
-make test-worker
-make test-event-generator
-make test-frontend
-make test-e2e
-make reindex-search
-make demo
-make logs
-make status
-```
-
-`make test` runs the backend, worker, event-generator, and frontend suites. It does not include Playwright E2E because E2E requires running backend and frontend services.
-
-## Tests
-
-Backend:
-
-```powershell
-cd backend
-pytest
-```
-
-Event generator:
-
-```powershell
-cd event-generator
-pytest
-```
-
-Worker:
-
-```powershell
-cd worker
-pytest
-```
-
-Frontend:
-
-```powershell
-cd frontend
-npm run test
-npm run build
-```
-
-End-to-end:
-
-```powershell
-cd e2e
-npm install
-npx playwright install
-npx playwright test
-```
-
-Or:
-
-```powershell
-make test-e2e
-```
-
-Docker Compose syntax:
-
-```powershell
-docker compose config
-```
-
-Makefile target audit:
-
-```powershell
-Get-Content Makefile
-```
-
-## Manual Workflow Checks
-
-```powershell
-curl http://localhost:8000/api/v1/vehicles
-curl http://localhost:8000/api/v1/stations
-curl http://localhost:8000/api/v1/defects
-curl http://localhost:8000/api/v1/alerts
-curl http://localhost:8000/api/v1/investigations
-```
-
-## Event Generator
-
-The event generator can print valid JSON events or publish them to Redpanda topics.
-
-```powershell
-cd event-generator
-pip install -e .
-pytest
-python -m app.main --mode deterministic
-python -m app.main --mode random --count 10
-python -m app.main --mode deterministic --publish --broker localhost:19092
-python -m app.main --mode random --count 10 --publish --broker localhost:19092
-```
-
-If editable install is not available:
-
-```powershell
-pip install pydantic pytest
-```
-
-Optional file output:
-
-```powershell
-python -m app.main --mode deterministic --output events.jsonl
-python -m app.main --mode random --count 100 --output events.jsonl
-```
-
-## Streaming
-
-Start Redpanda and Redpanda Console:
-
-```powershell
-docker compose up redpanda redpanda-console
-```
-
-Create topics:
-
-```powershell
-docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
-docker compose exec redpanda rpk topic list
-```
-
-Publish demo events:
-
-```powershell
-cd event-generator
-python -m app.main --mode deterministic --publish --broker localhost:19092
-```
-
-Makefile shortcuts are also available:
-
-```powershell
-make up-streaming
-make create-topics
-make produce-demo-events
-make produce-random-events
-make produce-defect-spike
-```
-
-On Windows systems without Make, use the direct PowerShell commands above.
-
-## Worker Ingestion
-
-The worker is separate from FastAPI. FastAPI serves API requests, while the worker consumes Redpanda messages and writes accepted events to PostgreSQL.
-
-| Topic | Table |
-| --- | --- |
-| `station.events` | `production_events` |
-| `sensor.readings` | `sensor_readings` |
-| `quality.defects` | `defects` |
-
-Run the full local ingestion flow:
-
-```powershell
-docker compose up postgres redpanda redpanda-console
-```
-
-In another terminal:
+Backend terminal:
 
 ```powershell
 cd backend
@@ -484,14 +243,14 @@ python -m app.db.seed
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-Create topics:
+Create Redpanda topics:
 
 ```powershell
 docker compose exec redpanda rpk topic create station.events sensor.readings quality.defects quality.alerts investigation.events
 docker compose exec redpanda rpk topic list
 ```
 
-Start the worker:
+Worker terminal:
 
 ```powershell
 cd worker
@@ -499,258 +258,333 @@ pip install -e .
 python -m app.main
 ```
 
-Publish deterministic demo events:
+Event generator terminal:
 
 ```powershell
 cd event-generator
-python -m app.main --mode deterministic --publish --broker localhost:19092
-```
-
-Verify through the API and database:
-
-```powershell
-curl http://localhost:8000/api/v1/defects
-curl http://localhost:8000/api/v1/stations
-curl http://localhost:8000/api/v1/vehicles
-docker compose exec postgres psql -U quality -d quality
-```
-
-Useful SQL checks:
-
-```sql
-select count(*) from production_events;
-select count(*) from sensor_readings;
-select count(*) from defects;
-```
-
-The worker uses `KAFKA_BOOTSTRAP_SERVERS` and `DATABASE_URL`. The repo default database URL is:
-
-```text
-postgresql+psycopg2://postgres:postgres@localhost:5432/manufacturing_quality
-```
-
-Duplicate event IDs are skipped safely. Invalid events are logged and skipped. Phase 7 generates rule-based quality alerts after successful worker persistence.
-
-## Rule-Based Alerts
-
-Phase 7 runs deterministic quality rules inside the worker after events are persisted. Rules inspect persisted defects, sensor readings, and production events, then create `quality_alerts` records with evidence.
-
-Implemented alert rules:
-
-- `REPEATED_DEFECT_STATION`
-- `EQUIPMENT_TEMPERATURE_HIGH`
-- `TORQUE_OUT_OF_TOLERANCE`
-- `VISION_CONFIDENCE_LOW`
-- `DEFECT_CODE_SPIKE`
-- `CONSECUTIVE_INSPECTION_FAILURES`
-
-Produce a deterministic defect spike:
-
-```powershell
-cd event-generator
+pip install -e .
 python -m app.main --mode defect-spike --publish --broker localhost:19092
 ```
 
-Verify alerts:
+Frontend terminal:
 
 ```powershell
-curl http://localhost:8000/api/v1/alerts
-docker compose exec redpanda rpk topic consume quality.alerts --num 5
+cd frontend
+npm install
+npm run dev
 ```
 
-Phase 10 adds Elasticsearch search for indexed quality records.
+## Testing
 
-## Frontend Dashboard Data Integration
+Local commands:
 
-Phase 9 turns the frontend shell into a live internal dashboard. Pages call the FastAPI backend through `VITE_API_BASE_URL` and TanStack Query manages loading, error, success, refetch, and mutation states.
-
-Routes:
-
-- `/dashboard`
-- `/search`
-- `/stations`
-- `/equipment`
-- `/vehicles`
-- `/defects`
-- `/alerts`
-- `/investigations`
-
-The root route redirects to `/dashboard`.
-
-The API base URL is configured with:
-
-```text
-VITE_API_BASE_URL=http://localhost:8000
+```powershell
+docker compose config
+docker compose --profile tools config
 ```
-
-Connected pages:
-
-- Dashboard live metrics and latest alerts
-- Search grouped results
-- Stations with defect and alert counts
-- Equipment inventory
-- Vehicles with VIN search and selected vehicle details
-- Defects with severity and status filters
-- Alerts with severity and status filters plus acknowledgement
-- Investigations worklist
-
-Sensor event detail history is not exposed by the backend API yet, so the dashboard shows `Not available yet` for latest sensor event timestamp and the vehicle page keeps the station event history placeholder. The full investigation detail workflow is intentionally not included until Phase 11.
-
-## Elasticsearch Quality Search
-
-Phase 10 indexes searchable documents into Elasticsearch:
-
-| Index | Records |
-| --- | --- |
-| `manufacturing-defects` | defects |
-| `manufacturing-alerts` | quality alerts |
-| `manufacturing-investigations` | investigations |
-| `manufacturing-events` | production event summaries |
-
-The backend reads:
-
-```text
-ELASTICSEARCH_URL=http://localhost:9200
-```
-
-Rebuild search indexes from PostgreSQL:
 
 ```powershell
 cd backend
-python -m app.search.reindex
+pytest
 ```
-
-Makefile shortcut:
 
 ```powershell
-make reindex-search
+cd worker
+pytest
 ```
 
-Search endpoints:
-
-```text
-GET /api/v1/search?q=torque
-GET /api/v1/search/defects?q=torque
-GET /api/v1/search/alerts?q=defect
-GET /api/v1/search/investigations?q=root
-GET /api/v1/search/events?q=station
+```powershell
+cd event-generator
+pytest
 ```
 
-Frontend route:
-
-```text
-http://localhost:5173/search
+```powershell
+cd frontend
+npm run test:run
+npm run build
 ```
 
-Advanced search filters are deferred. The full investigation lifecycle workflow starts in Phase 11, and AI summaries start in Phase 12.
+E2E tests require running backend and frontend services:
 
-## Quality Investigation Workflow
-
-Phase 11 lets engineers move from an alert to an investigation:
-
-```text
-Alert detail -> evidence review -> create investigation -> edit hypothesis and notes -> resolve investigation -> resolve alert
+```powershell
+cd e2e
+npm install
+npx playwright install
+npx playwright test
 ```
 
-Workflow endpoints:
+Makefile shortcuts:
 
-```text
-POST /api/v1/alerts/{id}/investigation
-PATCH /api/v1/investigations/{id}
-PATCH /api/v1/investigations/{id}/status
-PATCH /api/v1/alerts/{id}/status
+```powershell
+make test
+make test-e2e
 ```
 
-Frontend routes:
+GitHub Actions CI validates Docker Compose, backend tests, worker tests, event-generator tests, frontend tests, and frontend build.
 
-```text
-/alerts/{id}
-/investigations/{id}
+CI badge placeholder to update after pushing to GitHub:
+
+```markdown
+![CI](https://github.com/REPLACE_OWNER/REPLACE_REPO/actions/workflows/ci.yml/badge.svg)
 ```
 
-Investigation statuses:
+## Demo Scenario
 
-- `draft`
-- `active`
-- `waiting_on_data`
-- `resolved`
+1. Start the stack with `make demo`.
+2. Confirm database seed data exists.
+3. Produce defect-spike events.
+4. Let the worker generate a quality alert.
+5. Open the dashboard.
+6. Open the alert queue.
+7. Open an alert detail page.
+8. Create an investigation.
+9. Generate an AI summary.
+10. Search for `torque`.
+11. Resolve the investigation.
+12. Run the automated tests.
 
-Creating an investigation from an open or acknowledged alert moves the alert to `investigating`. Resolving an investigation also resolves the related alert. Evidence from the alert is copied into the investigation so the engineering context remains attached.
+## Screenshots or Screenshot Placeholders
 
-AI summary generation is intentionally not included yet. Phase 11 only displays the placeholder that AI summaries start in Phase 12.
+Screenshots can be added after running the local demo. Do not treat these as implemented image assets yet.
 
-## AI-Assisted Investigation Summaries
+Suggested screenshots:
 
-Phase 12 adds a grounded AI summary workflow for investigations. The default provider is deterministic and local:
+- Dashboard
+- Alerts Queue
+- Alert Detail
+- Investigation Detail
+- AI Summary Panel
+- Search Page
+- Redpanda Console topics
+- GitHub Actions CI run
 
-```text
-AI_SUMMARY_PROVIDER=mock
+## API Examples
+
+Health:
+
+```powershell
+curl http://localhost:8000/health
 ```
 
-Optional future placeholder settings are available but not required:
+Vehicles:
 
-```text
-OPENAI_COMPATIBLE_BASE_URL=
-OPENAI_COMPATIBLE_API_KEY=
-OPENAI_COMPATIBLE_MODEL=
+```powershell
+curl http://localhost:8000/api/v1/vehicles
 ```
 
-Generate and save a summary:
+Alerts:
+
+```powershell
+curl http://localhost:8000/api/v1/alerts
+```
+
+Create an investigation from an alert:
+
+```powershell
+curl -X POST http://localhost:8000/api/v1/alerts/REPLACE_WITH_ALERT_ID/investigation `
+  -H "Content-Type: application/json" `
+  -d "{\"title\":\"Investigate torque alert\",\"summary\":\"Opened from quality alert\",\"status\":\"active\"}"
+```
+
+Generate an AI summary:
 
 ```powershell
 curl -X POST http://localhost:8000/api/v1/investigations/REPLACE_WITH_INVESTIGATION_ID/ai-summary
 ```
 
-The summary uses only platform evidence:
-
-- linked alert details
-- alert `evidence_json`
-- related defects
-- related sensor readings
-- related station events
-- investigation notes
-- root-cause hypothesis
-
-AI is an assistant, not an authority. The summary must include limitations, avoid invented root causes, and use cautious language such as `may indicate` or `possible`. High confidence should be rare.
-
-Frontend route:
-
-```text
-http://localhost:5173/investigations
-```
-
-Open an investigation and click Generate AI Summary.
-
-## End-to-End Manufacturing Quality Workflow
-
-Phase 13 verifies the complete browser workflow:
-
-```text
-Dashboard -> Alerts -> Alert detail -> Create investigation -> Investigation detail -> Generate AI Summary -> Resolve investigation
-```
-
-Automated Playwright tests use stable selectors such as `dashboard-page`, `alerts-page`, `alert-row`, `alert-detail-page`, `investigation-form`, `generate-ai-summary-button`, `ai-summary-panel`, and `resolve-investigation-button`.
-
-Manual full-system verification can still start Redpanda, run the worker, publish defect-spike events, and confirm alerts flow from stream ingestion into the UI before creating and resolving an investigation.
-
-## Dockerized One-Command Demo
-
-Phase 14 makes the complete local stack runnable through Docker Compose:
-
-```text
-frontend -> backend -> PostgreSQL
-event-generator -> Redpanda -> worker -> PostgreSQL -> backend -> frontend
-backend -> Elasticsearch for search
-```
-
-The one-shot `event-generator` service uses the Compose `tools` profile and is run by Makefile producer commands.
-
-Run:
+Search:
 
 ```powershell
-copy .env.example .env
-docker compose config
-make demo
+curl "http://localhost:8000/api/v1/search?q=torque"
 ```
 
-If Make is not installed, run the direct PowerShell fallback in `docs/phase14.md`. GitHub Actions CI is covered separately in `docs/phase15.md`.
+## Event Examples
+
+Station event:
+
+```json
+{
+  "event_id": "4c9f6b85-73dc-4b7a-90c8-2b9c9f16f101",
+  "event_type": "station_event",
+  "occurred_at": "2026-01-01T12:00:00Z",
+  "payload": {
+    "vehicle_vin": "MQPLANT0000000001",
+    "station_code": "A-FINAL",
+    "status": "entered"
+  }
+}
+```
+
+Sensor reading:
+
+```json
+{
+  "event_id": "2f7bd493-9d65-496c-bb2a-45c2beffcc21",
+  "event_type": "sensor_reading",
+  "occurred_at": "2026-01-01T12:01:00Z",
+  "payload": {
+    "equipment_asset_tag": "EQ-A-TORQUE-02",
+    "station_code": "A-BODY",
+    "metric_name": "torque_nm",
+    "value": 52.4,
+    "unit": "Nm",
+    "upper_limit": 45.0
+  }
+}
+```
+
+Defect event:
+
+```json
+{
+  "event_id": "c973a279-7158-4558-b520-8fbda87a9999",
+  "event_type": "defect_detected",
+  "occurred_at": "2026-01-01T12:02:00Z",
+  "payload": {
+    "vehicle_vin": "MQPLANT0000000001",
+    "station_code": "A-BODY",
+    "equipment_asset_tag": "EQ-A-TORQUE-02",
+    "defect_code": "TORQUE_OUT_OF_SPEC",
+    "severity": "high",
+    "description": "Door fastener torque above upper limit"
+  }
+}
+```
+
+Quality alert event:
+
+```json
+{
+  "alert_code": "DEFECT_CODE_SPIKE",
+  "station_id": 1,
+  "equipment_id": 2,
+  "severity": "critical",
+  "title": "Defect spike detected",
+  "description": "Repeated torque defects detected at the same station.",
+  "evidence_json": {
+    "defect_code": "TORQUE_OUT_OF_SPEC",
+    "count": 3,
+    "window_minutes": 60
+  },
+  "status": "open"
+}
+```
+
+## Search Examples
+
+Rebuild search indexes:
+
+```powershell
+make reindex-search
+```
+
+Search all groups:
+
+```powershell
+curl "http://localhost:8000/api/v1/search?q=torque"
+```
+
+Search alerts:
+
+```powershell
+curl "http://localhost:8000/api/v1/search/alerts?q=torque"
+```
+
+Search investigations:
+
+```powershell
+curl "http://localhost:8000/api/v1/search/investigations?q=root"
+```
+
+## AI Summary Example
+
+This is generated by the local mock provider and uses only available evidence.
+
+```json
+{
+  "likely_issue": "Available evidence may indicate a torque quality issue at the affected station.",
+  "affected_station": "A-BODY",
+  "affected_equipment": "EQ-A-TORQUE-02",
+  "evidence": [
+    "Quality alert reported repeated torque defects.",
+    "Alert evidence included readings above the configured upper limit.",
+    "Investigation notes mentioned possible tool calibration drift."
+  ],
+  "recommended_next_checks": [
+    "Verify torque tool calibration records.",
+    "Inspect recent sensor readings for the same equipment.",
+    "Review vehicles processed during the same time window."
+  ],
+  "confidence": "medium",
+  "limitations": [
+    "Summary is generated from available platform evidence only.",
+    "No real external LLM is used in local mock mode."
+  ]
+}
+```
+
+## System Design Notes
+
+- PostgreSQL is the system of record.
+- Elasticsearch is a derived search index.
+- Redpanda carries event streams between producer and worker.
+- FastAPI handles request/response APIs.
+- The worker handles long-running event consumption and rule execution.
+- The frontend uses TanStack Query for server state.
+- E2E tests use API-created fixtures for stability.
+- The AI summary provider defaults to mock mode to avoid paid APIs and hallucinated claims.
+
+## What I Would Improve Next
+
+- Authentication and role-based access control.
+- Real Kafka deployment profiles.
+- Richer event schemas.
+- Better Elasticsearch mappings.
+- Observability with OpenTelemetry.
+- Production-grade alert deduplication.
+- Historical trend analytics.
+- Model/provider abstraction for real LLMs.
+- More robust E2E fixtures.
+- Kubernetes deployment.
+
+## Known Limitations
+
+- This is a portfolio simulation, not connected to real factory systems.
+- Security and authentication are intentionally minimal.
+- The AI provider defaults to mock mode.
+- The event generator uses simulated manufacturing data.
+- Production deployment would require stronger observability, authentication, secrets management, and monitoring.
+- Screenshots are not committed yet; add them after running the local demo.
+- E2E tests require backend and frontend services to be running.
+
+## Resume Bullet Examples
+
+- Built a full-stack Manufacturing Quality Intelligence Platform using FastAPI, React, PostgreSQL, Redpanda, Elasticsearch, and Docker Compose to simulate factory quality event ingestion, alerting, investigation, and search workflows.
+- Implemented event-driven ingestion pipeline with Kafka-compatible Redpanda topics, Python worker consumers, SQLAlchemy persistence, and rule-based quality alert generation for simulated station, sensor, and defect events.
+- Designed investigation workflow with evidence-based alerts, Elasticsearch search, and mock AI-assisted root-cause summaries constrained to real event data and documented limitations.
+- Added automated backend, worker, event-generator, frontend, E2E, and GitHub Actions CI tests to demonstrate production-oriented engineering practices.
+
+## Interview Talking Points
+
+- Why the worker is separate from the API.
+- Why PostgreSQL is the source of truth and Elasticsearch is a derived index.
+- How Redpanda supports event-driven ingestion.
+- How idempotency prevents duplicate event persistence.
+- How alert rules stay deterministic and explainable.
+- How the AI summary provider avoids unsupported claims.
+- How Docker Compose makes the project easy to demo.
+- How GitHub Actions maps to local test commands.
+- What would be required for production security, observability, and deployment.
+
+More detail is available in `docs/interview-guide.md`.
+
+## Documentation Map
+
+- `docs/architecture.md`
+- `docs/testing-strategy.md`
+- `docs/interview-guide.md`
+- `docs/phase16.md`
+- `docs/api-contracts.md`
+- `docs/event-contracts.md`
+- `docs/data-model.md`
+- `docs/youtube-tutorial-notes.md`

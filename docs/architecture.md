@@ -365,3 +365,52 @@ The frontend connects to the backend with `VITE_API_BASE_URL=http://localhost:80
 Elasticsearch remains a derived search index. PostgreSQL is still the source of truth, and `make reindex-search` runs the backend reindex command when demo data needs to be refreshed for the Search page.
 
 Phase 14 does not add GitHub Actions CI. CI starts in Phase 15.
+
+## Phase 15 GitHub Actions CI
+
+Phase 15 adds GitHub Actions CI for core validation:
+
+- Docker Compose config validation.
+- Backend tests.
+- Worker tests.
+- Event-generator tests.
+- Frontend tests and build.
+
+The CI workflow uses mock AI provider defaults and does not require paid APIs, OpenAI-compatible keys, Redpanda, Elasticsearch, or PostgreSQL service containers for the current unit and integration test suites.
+
+## Phase 16 Portfolio Architecture Summary
+
+The final portfolio architecture is:
+
+```text
+event-generator
+   |
+   v
+Redpanda topics
+   |
+   v
+worker consumers
+   |
+   v
+PostgreSQL <---- FastAPI backend ----> React frontend
+   |
+   v
+Elasticsearch search index
+
+Investigation workflow:
+QualityAlert -> Investigation -> AI Summary
+```
+
+Core design decisions:
+
+- PostgreSQL is the system of record.
+- Elasticsearch is a derived search index.
+- Redpanda models factory event streams.
+- The worker is separate from the API so stream processing does not affect request latency.
+- FastAPI exposes typed manufacturing quality APIs.
+- React provides the internal engineering workflow UI.
+- The mock AI summary provider keeps local demos deterministic and avoids paid services.
+- Docker Compose and Makefile commands make the project demoable from a fresh clone.
+- GitHub Actions validates core project health on push and pull request.
+
+Known production gaps are intentionally documented: authentication, role-based access control, secrets management, deeper observability, production deployment manifests, richer event schemas, and stronger E2E orchestration.

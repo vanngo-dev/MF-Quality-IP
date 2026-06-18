@@ -940,3 +940,53 @@ Debugging guide:
 - Compose failure: run `docker compose config` locally and inspect YAML indentation, profiles, and environment values.
 
 See `docs/phase15.md` for the dedicated Phase 15 CI guide.
+
+## Phase 16 Final Verification
+
+Phase 16 does not add product behavior. It documents the final verification path for the portfolio project.
+
+Final local checks:
+
+```powershell
+docker compose config
+docker compose --profile tools config
+```
+
+```powershell
+cd backend
+pytest
+```
+
+```powershell
+cd worker
+pytest
+```
+
+```powershell
+cd event-generator
+pytest
+```
+
+```powershell
+cd frontend
+npm run test:run
+npm run build
+```
+
+E2E checks require backend and frontend services:
+
+```powershell
+cd e2e
+npm install
+npx playwright install
+npx playwright test
+```
+
+Makefile shortcuts:
+
+```powershell
+make test
+make test-e2e
+```
+
+Do not claim final checks pass unless they actually run in the current environment. If a check cannot run, document the exact blocker, such as Docker Desktop not running, Playwright browsers missing, services not started, or a sandbox blocking esbuild process startup.
